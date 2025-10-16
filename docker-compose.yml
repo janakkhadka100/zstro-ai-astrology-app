@@ -1,0 +1,87 @@
+# ZSTRO AI Astrology Platform - Docker Compose for Development
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: zstro-postgres
+    environment:
+      POSTGRES_DB: zstro_astrology
+      POSTGRES_USER: zstro_user
+      POSTGRES_PASSWORD: zstro_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zstro_user -d zstro_astrology"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: zstro-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ZSTRO Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zstro-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - POSTGRES_URL=postgresql://zstro_user:zstro_password@postgres:5432/zstro_astrology
+      - DATABASE_URL=postgresql://zstro_user:zstro_password@postgres:5432/zstro_astrology
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SECRET=your-auth-secret-here
+      - NEXTAUTH_URL=http://localhost:3000
+      - OPENAI_API_KEY=your-openai-api-key-here
+      - PROKERALA_API_KEY=your-prokerala-api-key-here
+      - PROKERALA_API_SECRET=your-prokerala-api-secret-here
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: zstro-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: zstro-network
