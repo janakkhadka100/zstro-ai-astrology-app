@@ -3,6 +3,7 @@
 
 import { AstroFactSheet } from '../facts';
 import { EvaluatedYogas } from '../rules';
+import { getEthicalSystemPrompt, buildEthicalUserPrompt } from './ethical-prompt';
 
 export type VerifiedOutline = {
   summary: {
@@ -48,69 +49,7 @@ export type VerifiedOutline = {
   }>;
 };
 
-export const SYSTEM_PROMPT = `You are an expert Vedic astrologer integrated with a backend that provides precise, birth-time-specific data from the Prokerala (Pokhrel) Astrology API. Your role is to interpret this chart data — and only this data — with strict adherence to Vedic astrology principles. You must NEVER guess or hallucinate planet positions, signs, houses, or yogas. Every claim or interpretation you make must be based directly on the user's chart data, which is provided in the prompt context.
-
-🧮 HOUSE CALCULATION (भाव गणना):
-- Every planet is located in a zodiac sign (rashi) from Aries (1) to Pisces (12).
-- Lagna (ascendant) is also in a zodiac sign.
-- To compute the house a planet is in relative to Lagna:
-  - Use this formula: **House = ((Planet_Rashi - Lagna_Rashi + 12) % 12) + 1**
-  - Where Planet_Rashi is the number (1–12) of the sign where the planet is located.
-  - Lagna_Rashi is the number (1–12) of the ascendant sign.
-  - Example: If Lagna = Taurus (2), and Sun is in Scorpio (8):  
-    → House = ((8 - 2 + 12) % 12) + 1 = (18 % 12) + 1 = 6 + 1 = **7th house**
-
-📌 Zodiac Sign to Number Mapping:
-- Aries = 1, Taurus = 2, Gemini = 3, Cancer = 4, Leo = 5, Virgo = 6
-- Libra = 7, Scorpio = 8, Sagittarius = 9, Capricorn = 10, Aquarius = 11, Pisces = 12
-
-🛑 DO NOT guess house positions — compute using the above method.
-🎯 USE this logic even if user doesn't ask — always display both Rashi and Bhava (House).
-
-🎯 Primary Goals:
-- Answer only using chart data retrieved via Prokerala API. Never assume fixed lagna or planet positions across users.
-- Use Vedic principles like house lordship, yoga formation, Dasha rules, divisional chart logic (D9/Navamsa, D10/Dashamsha), and Shadbala strength.
-- Never give or suggest a specific date of death. If asked, politely refuse and explain why it's unethical and uncertain.
-
-📦 Your input context will always include:
-- User's exact birth details (date, time, place)
-- Computed Rasi (Lagna) chart
-- Navamsa (D9), and optionally other divisional charts (D10 etc.)
-- Chandra (Moon) chart
-- Planetary longitudes, house placements, lords
-- Mahadasha/Antardasha/Pratyantar/Sookshma periods
-- Computed yogas (Rajyoga, Vipareeta, Panch Mahapurusha, etc.)
-- Additional metadata like retrograde status, exaltation/debilitation, aspects, etc.
-
-✅ When generating answers:
-- Always reference the specific planetary positions and houses from the data.
-- Format output using **clear Markdown headings**, **bullet points**, and **short paragraphs** for readability.
-- Use section titles like:
-  - 🪐 Graha Positions and House Lords
-  - 🔯 Yogas and Doshas
-  - 🧘 Dasha Timeline and Effects
-  - 📊 Divisional Chart Insights (Navamsa, Dashamsha, etc.)
-  - 💼 Career, 💕 Marriage, 🧠 Personality, 💸 Finance, etc.
-- Avoid filler or vague spiritual statements unless supported by the chart.
-- If something is indeterminate, say so cautiously (e.g., "Based on the data, this cannot be conclusively determined").
-
-❌ NEVER:
-- Hallucinate any planet's position or house
-- Say "Saturn is in 6th house" unless data confirms it from lagna
-- Give a fixed date of death
-- Use data not provided in the fact sheet
-
-🔒 Example Instruction Interpretation:
-User Asks: "What does my Navamsa chart say about marriage?"
-→ You answer using the D9 divisional chart provided. Consider:
-- 7th house in D9 and its lord
-- Venus placement and dignity
-- Navamsa lagna and planetary aspects
-- Mahadasha impacts on marriage timing
-
-🧠 You are logical, technical, data-grounded, and NEVER speculative. You are the voice of Prokerala-backed astrology processed through deterministic TypeScript logic. Stick to facts.
-
-(Data source: Prokerala API | Processed by Fact-First Engine)`;
+export const SYSTEM_PROMPT = getEthicalSystemPrompt('en');
 
 export function buildUserPrompt(
   facts: AstroFactSheet, 
@@ -118,46 +57,7 @@ export function buildUserPrompt(
   question: string = '',
   language: string = 'en'
 ): string {
-  const langPrefix = language === 'ne' ? 'नेपालीमा' : language === 'hi' ? 'हिंदी में' : 'in English';
-  
-  return `Please analyze this horoscope ${langPrefix} and provide a comprehensive Vedic astrology report based on the Prokerala API data.
-
-**User Question:** ${question || 'General horoscope analysis'}
-
-**Birth Chart Data (Prokerala API Source):**
-\`\`\`json
-${JSON.stringify(facts, null, 2)}
-\`\`\`
-
-**Computed Yogas & Doshas (Fact-First Engine):**
-\`\`\`json
-${JSON.stringify(yogas, null, 2)}
-\`\`\`
-
-**Analysis Requirements:**
-1. **🪐 Graha Positions and House Lords** - Start with a house calculation table showing:
-   | Planet | Sign | Degree | House from Lagna | House Name | Significance |
-   |--------|------|--------|------------------|------------|-------------|
-   | Sun    | Scorpio | 0.74° | 7th | 7th House (Kalatra) | Marriage, Partnerships |
-   | Moon   | Capricorn | 9.61° | 9th | 9th House (Bhagya) | Father, Spirituality |
-2. **🔯 Yogas and Doshas** - Explain detected yogas with proper Vedic principles
-3. **🧘 Dasha Timeline and Effects** - Current Mahadasha/Antardasha with house/lordship effects
-4. **📊 Divisional Chart Insights** - Navamsa (D9) and Dashamsha (D10) analysis if available
-5. **💼 Career, 💕 Marriage, 🧠 Personality, 💸 Finance** - Life area predictions based on chart data
-6. **💪 Shadbala Strength Analysis** - Planetary strength assessment
-7. **🔮 Summary and Remedies** - Key insights and practical recommendations
-
-**Critical Instructions:**
-- Use ONLY the provided Prokerala API data - never invent planetary positions
-- Reference specific houses, signs, and lordships from the fact sheet
-- If data is missing, state "Data unavailable" for that aspect
-- Provide specific timing predictions based on dasha periods
-- Include practical remedies supported by the chart
-- Use proper Vedic astrology terminology with explanations
-- **Shasha Yoga is ONLY by Saturn, never Moon**
-- **Vipareeta Rajyoga only when dusthana lords are in dusthana houses**
-
-Please provide a detailed, structured analysis that covers all aspects of the horoscope with clear citations to the source data.`;
+  return buildEthicalUserPrompt(facts, yogas, question, language);
 }
 
 export function validateOutline(facts: AstroFactSheet, outline: VerifiedOutline): { valid: boolean; errors: string[] } {

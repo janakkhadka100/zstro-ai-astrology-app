@@ -16,6 +16,7 @@ import {
   FINAL_SYNTHESIS_PROMPT
 } from '@/lib/prompts/advanced-astrology';
 import { SYSTEM_PROMPT, buildUserPrompt } from '@/src/astro/ai/prompt';
+import { getEthicalSystemPrompt } from '@/src/astro/ai/ethical-prompt';
 import { logger } from '@/lib/services/logger';
 import { enhancedCache } from '@/lib/services/enhanced-cache';
 import { astrologyValidationService } from '@/lib/services/astro/validate';
@@ -93,8 +94,8 @@ export async function POST(request: NextRequest) {
     const facts = buildAstroFactSheet(advancedData);
     const yogas = evaluateYogas(facts);
     
-    // Build comprehensive prompt using fact-first system
-    const systemPrompt = SYSTEM_PROMPT;
+    // Build comprehensive prompt using ethical system
+    const systemPrompt = getEthicalSystemPrompt(validatedData.language);
     const userPrompt = buildUserPrompt(facts, yogas, validatedData.question, validatedData.language);
 
     // Generate AI response
