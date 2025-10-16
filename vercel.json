@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "name": "zstro-ai-astrology",
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
