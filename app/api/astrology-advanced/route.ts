@@ -15,6 +15,7 @@ import {
   DIVISIONAL_CHART_PROMPT,
   FINAL_SYNTHESIS_PROMPT
 } from '@/lib/prompts/advanced-astrology';
+import { SYSTEM_PROMPT, buildUserPrompt } from '@/src/astro/ai/prompt';
 import { logger } from '@/lib/services/logger';
 import { enhancedCache } from '@/lib/services/enhanced-cache';
 import { astrologyValidationService } from '@/lib/services/astro/validate';
@@ -84,9 +85,17 @@ export async function POST(request: NextRequest) {
       logger.warn('Chart validation failed', { issues: chartValidation.issues });
     }
 
-    // Build comprehensive prompt
-    const systemPrompt = ADVANCED_SYSTEM_PROMPT;
-    const userPrompt = buildComprehensivePrompt(advancedData, validatedData);
+    // Use fact-first pipeline for enhanced accuracy
+    const { buildAstroFactSheet } = await import('@/src/astro/facts');
+    const { evaluateYogas } = await import('@/src/astro/rules');
+    
+    // Build deterministic fact sheet
+    const facts = buildAstroFactSheet(advancedData);
+    const yogas = evaluateYogas(facts);
+    
+    // Build comprehensive prompt using fact-first system
+    const systemPrompt = SYSTEM_PROMPT;
+    const userPrompt = buildUserPrompt(facts, yogas, validatedData.question, validatedData.language);
 
     // Generate AI response
     const result = await streamText({
