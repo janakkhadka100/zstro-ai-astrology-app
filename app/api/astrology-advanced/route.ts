@@ -16,7 +16,7 @@ import {
   FINAL_SYNTHESIS_PROMPT
 } from '@/lib/prompts/advanced-astrology';
 import { logger } from '@/lib/services/logger';
-import { enhancedCache, CacheKeys } from '@/lib/services/enhanced-cache';
+import { enhancedCache } from '@/lib/services/enhanced-cache';
 import { astrologyValidationService } from '@/lib/services/astro/validate';
 
 const advancedAstrologyRequestSchema = z.object({
@@ -56,11 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check cache first
-    const cacheKey = CacheKeys.astroData(
-      validatedData.birthDate,
-      validatedData.birthTime,
-      validatedData.birthPlace
-    );
+    const cacheKey = `astro:advanced:${validatedData.birthDate}-${validatedData.birthTime}-${validatedData.birthPlace}`;
     
     let advancedData = await enhancedCache.get(cacheKey);
     
