@@ -95,8 +95,7 @@ describe('Panch-Mahapurush Yogas', () => {
       planets: [
         {
           planet: 'Saturn',
-          sign: 'Capricorn',
-          house: 2, // Not Kendra
+          sign: 'Taurus', // This will be calculated as 2nd house from Aries (not Kendra)
           degree: 15,
           isRetro: false
         }

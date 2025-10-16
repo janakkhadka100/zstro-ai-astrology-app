@@ -3,6 +3,7 @@
 
 import { normalizePlanetName, normalizeSignName, calculateHouseFromLongitude, calculateDignity } from './utils';
 import { getHousesOwnedBy } from './lords';
+import { computeHouseFromSigns, calculatePlanetHouses, validateHouseCalculation } from './house-calculator';
 
 export type AstroFactSheet = {
   ascendant: { 
@@ -55,31 +56,71 @@ export function buildAstroFactSheet(astroData: any): AstroFactSheet {
   const ascendantDegree = astroData.ascendant?.degree || 0;
   const ascendantLord = getAscendantLord(ascendantSign);
   
-  // Process planets
-  const planets = (astroData.planets || []).map((planet: any) => {
-    const normalizedPlanet = normalizePlanetName(planet.planet || 'Unknown');
-    const normalizedSign = normalizeSignName(planet.sign || 'Unknown');
-    const house = planet.house || calculateHouseFromLongitude(
-      planet.degree || 0, 
-      ascendantDegree
-    );
+  // Process planets with accurate house calculation
+  const rawPlanets = (astroData.planets || []).map((planet: any) => ({
+    planet: normalizePlanetName(planet.planet || 'Unknown'),
+    sign: normalizeSignName(planet.sign || 'Unknown'),
+    degree: planet.degree
+  }));
+  
+  // Calculate houses using the house calculation system
+  const planetHouses = calculatePlanetHouses(rawPlanets, ascendantSign);
+  
+  // Validate house calculations
+  const validation = validateHouseCalculation(planetHouses, ascendantSign);
+  if (!validation.valid) {
+    console.warn('House calculation validation failed:', validation.errors);
+  }
+  
+  // Build final planet array with calculated houses
+  const planets = planetHouses.map(planetHouse => {
+    const normalizedPlanet = planetHouse.planet;
+    const normalizedSign = planetHouse.sign;
     
     return {
       planet: normalizedPlanet,
       sign: normalizedSign,
-      degree: planet.degree,
-      house: Math.max(1, Math.min(12, house)) as 1|2|3|4|5|6|7|8|9|10|11|12,
+      degree: planetHouse.degree,
+      house: planetHouse.house as 1|2|3|4|5|6|7|8|9|10|11|12,
       lordOf: getHousesOwnedBy(normalizedPlanet, ascendantSign),
       dignity: calculateDignity(normalizedPlanet, normalizedSign) as any,
-      isRetro: planet.isRetro || planet.isRetrograde || false,
+      isRetro: (astroData.planets || []).find((p: any) => 
+        normalizePlanetName(p.planet) === normalizedPlanet
+      )?.isRetro || false,
       divisional: {
-        D9: planet.navamsha ? {
-          sign: normalizeSignName(planet.navamsha.sign || 'Unknown'),
-          dignity: calculateDignity(normalizedPlanet, normalizeSignName(planet.navamsha.sign || 'Unknown'))
+        D9: (astroData.planets || []).find((p: any) => 
+          normalizePlanetName(p.planet) === normalizedPlanet
+        )?.navamsha ? {
+          sign: normalizeSignName(
+            (astroData.planets || []).find((p: any) => 
+              normalizePlanetName(p.planet) === normalizedPlanet
+            )?.navamsha?.sign || 'Unknown'
+          ),
+          dignity: calculateDignity(
+            normalizedPlanet, 
+            normalizeSignName(
+              (astroData.planets || []).find((p: any) => 
+                normalizePlanetName(p.planet) === normalizedPlanet
+              )?.navamsha?.sign || 'Unknown'
+            )
+          )
         } : undefined,
-        D10: planet.dashamsha ? {
-          sign: normalizeSignName(planet.dashamsha.sign || 'Unknown'),
-          dignity: calculateDignity(normalizedPlanet, normalizeSignName(planet.dashamsha.sign || 'Unknown'))
+        D10: (astroData.planets || []).find((p: any) => 
+          normalizePlanetName(p.planet) === normalizedPlanet
+        )?.dashamsha ? {
+          sign: normalizeSignName(
+            (astroData.planets || []).find((p: any) => 
+              normalizePlanetName(p.planet) === normalizedPlanet
+            )?.dashamsha?.sign || 'Unknown'
+          ),
+          dignity: calculateDignity(
+            normalizedPlanet, 
+            normalizeSignName(
+              (astroData.planets || []).find((p: any) => 
+                normalizePlanetName(p.planet) === normalizedPlanet
+              )?.dashamsha?.sign || 'Unknown'
+            )
+          )
         } : undefined
       }
     };

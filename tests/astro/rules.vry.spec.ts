@@ -11,8 +11,7 @@ describe('Vipareeta Rajyoga', () => {
       planets: [
         {
           planet: 'Jupiter', // 12th lord from Aries
-          sign: 'Pisces',
-          house: 6, // Dusthana house
+          sign: 'Virgo', // This will be calculated as 6th house from Aries
           degree: 15,
           isRetro: false
         }
@@ -36,8 +35,7 @@ describe('Vipareeta Rajyoga', () => {
       planets: [
         {
           planet: 'Mars', // 8th lord from Aries (Scorpio is 8th house)
-          sign: 'Scorpio',
-          house: 12, // Dusthana house
+          sign: 'Pisces', // This will be calculated as 12th house from Aries
           degree: 15,
           isRetro: false
         }
@@ -60,15 +58,13 @@ describe('Vipareeta Rajyoga', () => {
       planets: [
         {
           planet: 'Jupiter', // 12th lord from Aries
-          sign: 'Pisces',
-          house: 6, // Dusthana house
+          sign: 'Virgo', // This will be calculated as 6th house from Aries
           degree: 15,
           isRetro: false
         },
         {
           planet: 'Mars', // 8th lord from Aries (Scorpio is 8th house)
-          sign: 'Scorpio',
-          house: 12, // Dusthana house
+          sign: 'Pisces', // This will be calculated as 12th house from Aries
           degree: 20,
           isRetro: false
         }
