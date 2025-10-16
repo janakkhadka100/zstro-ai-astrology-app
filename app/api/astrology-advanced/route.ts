@@ -16,7 +16,7 @@ import {
   FINAL_SYNTHESIS_PROMPT
 } from '@/lib/prompts/advanced-astrology';
 import { logger } from '@/lib/services/logger';
-import { enhancedCacheService, CacheKeys } from '@/lib/services/enhanced-cache';
+import { enhancedCache, CacheKeys } from '@/lib/services/enhanced-cache';
 import { astrologyValidationService } from '@/lib/services/astro/validate';
 
 const advancedAstrologyRequestSchema = z.object({
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       validatedData.birthPlace
     );
     
-    let advancedData = await enhancedCacheService.get(cacheKey);
+    let advancedData = await enhancedCache.get(cacheKey);
     
     if (!advancedData) {
       // Fetch basic data from Pokhrel API (simplified for demo)
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       advancedData = advancedPokhrelService.transformToAdvancedData(basicData);
       
       // Cache the advanced data
-      await enhancedCacheService.set(cacheKey, advancedData, { ttl: 3600 });
+      await enhancedCache.set(cacheKey, advancedData, { ttl: 3600 });
     }
 
     // Validate the advanced chart data
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Generate AI response
     const result = await streamText({
-      model: openai('gpt-4o'),
+      model: openai(process.env.OPENAI_API_KEY ? 'gpt-4o' : 'gpt-3.5-turbo'),
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,

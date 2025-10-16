@@ -116,6 +116,7 @@ ${doshas.map(dosha => `
 `).join('\n')}
 
 Please analyze these yogas and doshas in detail, explaining their significance and impact on the native's life.`;
+};
 
 export const DASHA_ANALYSIS_PROMPT = (dashaData: any) => {
   return `**Dasha Analysis:**
@@ -131,6 +132,7 @@ export const DASHA_ANALYSIS_PROMPT = (dashaData: any) => {
 - Planet: ${dashaData.yogini?.current?.planet || 'N/A'}
 
 Please provide detailed analysis of the current dasha periods and their effects on the native's life.`;
+};
 
 export const SHADBALA_ANALYSIS_PROMPT = (shadbalaData: any) => {
   const planets = Object.keys(shadbalaData);
@@ -150,6 +152,7 @@ ${sortedPlanets.map(planet => `
 `).join('\n')}
 
 Please analyze the planetary strengths and their implications for the native's life.`;
+};
 
 export const DIVISIONAL_CHART_PROMPT = (divisionalData: any) => {
   return `**Divisional Charts Analysis:**
@@ -167,6 +170,7 @@ ${divisionalData.D10 ? `
 ` : 'Data not available'}
 
 Please analyze the divisional charts and their significance for marriage, career, and spiritual development.`;
+};
 
 export const FINAL_SYNTHESIS_PROMPT = (summary: any) => {
   return `**Final Synthesis & Predictions:**

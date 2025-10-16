@@ -1,7 +1,7 @@
 // lib/services/dataPrivacy.ts
 // Data privacy and retention service
 
-import { db } from '@/lib/db/queries';
+import { db } from '@/lib/db';
 import { logger } from './logger';
 
 export interface DataRetentionPolicy {
