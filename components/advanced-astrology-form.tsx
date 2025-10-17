@@ -21,7 +21,7 @@ interface AdvancedAstrologyRequest {
   birthPlace: string;
   question?: string;
   language: 'en' | 'ne' | 'hi';
-  analysisType: 'basic' | 'advanced' | 'comprehensive' | 'maximum-detail';
+  analysisType: 'basic' | 'advanced' | 'comprehensive' | 'maximum-detail' | 'nepali';
 }
 
 export function AdvancedAstrologyForm({ onSubmit, isLoading = false }: AdvancedAstrologyFormProps) {
@@ -156,7 +156,7 @@ export function AdvancedAstrologyForm({ onSubmit, isLoading = false }: AdvancedA
                   <Label>Analysis Type</Label>
                   <Select
                     value={formData.analysisType}
-                    onValueChange={(value: 'basic' | 'advanced' | 'comprehensive' | 'maximum-detail') => 
+                    onValueChange={(value: 'basic' | 'advanced' | 'comprehensive' | 'maximum-detail' | 'nepali') => 
                       handleInputChange('analysisType', value)
                     }
                   >
@@ -193,6 +193,14 @@ export function AdvancedAstrologyForm({ onSubmit, isLoading = false }: AdvancedA
                           <span className="font-medium">Maximum Detail Analysis</span>
                           <span className="text-sm text-muted-foreground">
                             Complete analysis with all charts, maximum data accuracy
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="nepali">
+                        <div className="flex flex-col">
+                          <span className="font-medium">नेपाली ज्योतिष विश्लेषण</span>
+                          <span className="text-sm text-muted-foreground">
+                            Comprehensive analysis in Nepali with cultural context
                           </span>
                         </div>
                       </SelectItem>

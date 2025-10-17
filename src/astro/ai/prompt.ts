@@ -5,6 +5,7 @@ import { AstroFactSheet } from '../facts';
 import { EvaluatedYogas } from '../rules';
 import { getEthicalSystemPrompt, buildEthicalUserPrompt } from './ethical-prompt';
 import { getComprehensiveSystemPrompt, buildComprehensiveUserPrompt } from './comprehensive-prompt';
+import { getNepaliSystemPrompt, buildNepaliUserPrompt } from './nepali-prompt';
 
 export type VerifiedOutline = {
   summary: {
@@ -65,6 +66,8 @@ export function getSystemPrompt(analysisType: string = 'comprehensive', language
   switch (analysisType) {
     case 'comprehensive':
       return getComprehensiveSystemPrompt();
+    case 'nepali':
+      return getNepaliSystemPrompt();
     case 'ethical':
     default:
       return getEthicalSystemPrompt(language);
@@ -80,6 +83,8 @@ export function buildUserPromptAdvanced(
   switch (analysisType) {
     case 'comprehensive':
       return buildComprehensiveUserPrompt(astroData, question, language);
+    case 'nepali':
+      return buildNepaliUserPrompt(astroData, question);
     case 'ethical':
     default:
       return buildEthicalUserPrompt(astroData, astroData.yogas || {}, question, language);
