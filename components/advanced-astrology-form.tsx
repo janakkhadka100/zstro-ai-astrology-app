@@ -21,7 +21,7 @@ interface AdvancedAstrologyRequest {
   birthPlace: string;
   question?: string;
   language: 'en' | 'ne' | 'hi';
-  analysisType: 'basic' | 'advanced' | 'comprehensive';
+  analysisType: 'basic' | 'advanced' | 'comprehensive' | 'maximum-detail';
 }
 
 export function AdvancedAstrologyForm({ onSubmit, isLoading = false }: AdvancedAstrologyFormProps) {
@@ -156,7 +156,7 @@ export function AdvancedAstrologyForm({ onSubmit, isLoading = false }: AdvancedA
                   <Label>Analysis Type</Label>
                   <Select
                     value={formData.analysisType}
-                    onValueChange={(value: 'basic' | 'advanced' | 'comprehensive') => 
+                    onValueChange={(value: 'basic' | 'advanced' | 'comprehensive' | 'maximum-detail') => 
                       handleInputChange('analysisType', value)
                     }
                   >
@@ -185,6 +185,14 @@ export function AdvancedAstrologyForm({ onSubmit, isLoading = false }: AdvancedA
                           <span className="font-medium">Comprehensive Analysis</span>
                           <span className="text-sm text-muted-foreground">
                             Full analysis with divisional charts, remedies, timing
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="maximum-detail">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Maximum Detail Analysis</span>
+                          <span className="text-sm text-muted-foreground">
+                            Complete analysis with all charts, maximum data accuracy
                           </span>
                         </div>
                       </SelectItem>

@@ -4,6 +4,7 @@
 import { AstroFactSheet } from '../facts';
 import { EvaluatedYogas } from '../rules';
 import { getEthicalSystemPrompt, buildEthicalUserPrompt } from './ethical-prompt';
+import { getComprehensiveSystemPrompt, buildComprehensiveUserPrompt } from './comprehensive-prompt';
 
 export type VerifiedOutline = {
   summary: {
@@ -58,6 +59,31 @@ export function buildUserPrompt(
   language: string = 'en'
 ): string {
   return buildEthicalUserPrompt(facts, yogas, question, language);
+}
+
+export function getSystemPrompt(analysisType: string = 'comprehensive', language: string = 'en'): string {
+  switch (analysisType) {
+    case 'comprehensive':
+      return getComprehensiveSystemPrompt();
+    case 'ethical':
+    default:
+      return getEthicalSystemPrompt(language);
+  }
+}
+
+export function buildUserPromptAdvanced(
+  astroData: any,
+  question: string = '',
+  language: string = 'en',
+  analysisType: string = 'comprehensive'
+): string {
+  switch (analysisType) {
+    case 'comprehensive':
+      return buildComprehensiveUserPrompt(astroData, question, language);
+    case 'ethical':
+    default:
+      return buildEthicalUserPrompt(astroData, astroData.yogas || {}, question, language);
+  }
 }
 
 export function validateOutline(facts: AstroFactSheet, outline: VerifiedOutline): { valid: boolean; errors: string[] } {
