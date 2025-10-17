@@ -19,6 +19,8 @@
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:astro": "jest tests/astro",
     "test:astro:watch": "jest tests/astro --watch",
+    "test:parity": "vitest run lib/qa/parity.spec.ts",
+    "test:parity:watch": "vitest watch lib/qa/parity.spec.ts",
     "lint:strict": "next lint --max-warnings=0",
     "vercel:link": "vercel link --confirm",
     "vercel:dev": "vercel dev",
@@ -138,6 +140,7 @@
     "ts-jest": "^29.4.5",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
-    "vercel": "^33.0.0"
+    "vercel": "^33.0.0",
+    "vitest": "^3.2.4"
   }
 }
