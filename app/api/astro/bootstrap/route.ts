@@ -1,0 +1,87 @@
+// app/api/astro/bootstrap/route.ts
+// Bootstrap API - hydrate cards from AccountCard (no external calls)
+
+import { NextRequest, NextResponse } from 'next/server';
+import { BootstrapRequest, BootstrapResponse } from '@/lib/astrology/types';
+import { getAccountCard, mapAccountToAstroData } from '@/lib/source/account';
+import { validateAccountCard } from '@/lib/source/account';
+
+export const runtime = 'nodejs';
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json() as BootstrapRequest;
+    const { lang } = body;
+    
+    // Validate request
+    if (!lang || !['ne', 'en'].includes(lang)) {
+      return NextResponse.json(
+        { success: false, errors: ['Invalid language. Must be "ne" or "en"'] },
+        { status: 400 }
+      );
+    }
+
+    // Get user ID from session/auth (mock for now)
+    const userId = "test-user-123"; // In real app, get from auth session
+    
+    // Get account card
+    const account = getAccountCard(userId);
+    if (!account) {
+      return NextResponse.json(
+        { success: false, errors: ['Account not found'] },
+        { status: 404 }
+      );
+    }
+
+    // Validate account card
+    const validation = validateAccountCard(account);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { success: false, errors: validation.errors },
+        { status: 400 }
+      );
+    }
+
+    // Map account to astro data
+    const astroData = mapAccountToAstroData(account, lang);
+
+    console.log(`Bootstrap successful for user ${userId}, language: ${lang}`);
+    console.log(`Data coverage: D1(${astroData.d1.length}), Yogas(${astroData.yogas.length}), Dashas(${astroData.dashas.length})`);
+
+    const response: BootstrapResponse = {
+      success: true,
+      data: astroData
+    };
+
+    return NextResponse.json(response, { 
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    });
+
+  } catch (error) {
+    console.error('Bootstrap API error:', error);
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        errors: ['Internal server error'] 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Handle OPTIONS for CORS
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}

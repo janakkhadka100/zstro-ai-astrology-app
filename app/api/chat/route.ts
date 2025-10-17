@@ -1,22 +1,24 @@
 // app/api/chat/route.ts
-// Enhanced chat API that integrates Prokerala + Evidence cards
+// Cards-first chat API with missing data detection
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAstroData } from '@/lib/prokerala/service';
-import { buildCombinedPrompt } from '@/lib/llm/prompt-vision';
-import { ChatWithEvidenceRequest, ChatWithEvidenceResponse, EvidenceBundle } from '@/lib/extract/types';
+import { ChatRequest, ChatResponse } from '@/lib/astrology/types';
+import { buildCombinedPrompt, extractDataNeededFromResponse, isDataNeededResponse } from '@/lib/llm/prompt-core';
+import { detectMissingData, createFetchPlansFromKeys, getDataNeededMessage, getDataUpdatedMessage } from '@/lib/llm/missing-detector';
+import { fetchScopedData } from '@/lib/source/prokerala';
+import { mergeAstroData } from '@/lib/cards/compose';
 
-export const runtime = 'nodejs'; // Required for file processing
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as ChatWithEvidenceRequest;
-    const { question, lang, prokeralaData, evidenceBundle } = body;
+    const body = await req.json() as ChatRequest;
+    const { q: question, lang, cards, fetchMissing = true } = body;
     
     // Validate request
-    if (!question || !lang) {
+    if (!question || !lang || !cards) {
       return NextResponse.json(
-        { success: false, errors: ['Question and language are required'] },
+        { success: false, errors: ['Question, language, and cards are required'] },
         { status: 400 }
       );
     }
@@ -28,38 +30,63 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    console.log(`Processing chat request with ${evidenceBundle ? evidenceBundle.cards.length : 0} evidence cards`);
+    console.log(`Processing chat request: "${question}" in ${lang}`);
     
-    // Get Prokerala data if not provided
-    let astroData = prokeralaData;
-    if (!astroData) {
-      astroData = await getAstroData({ lang });
+    // Build prompt from cards
+    const { system, user, combined } = buildCombinedPrompt(lang, cards, question);
+    
+    // Simulate LLM response (in production, this would call actual LLM)
+    let analysis = `Based on the provided cards, here's the analysis:\n\n${user}\n\n[LLM analysis would be generated here using the above prompt]`;
+    
+    // Check if data is needed
+    let dataNeeded: string[] = [];
+    let cardsUpdated = false;
+    let updatedCards = cards;
+    
+    if (fetchMissing) {
+      // Detect missing data from question
+      const missingPlans = detectMissingData(question, cards);
+      
+      if (missingPlans.length > 0) {
+        console.log(`Missing data detected, fetching: ${missingPlans.map(p => p.kind).join(', ')}`);
+        
+        try {
+          // Fetch missing data
+          const patch = await fetchScopedData(cards.profile || {}, missingPlans, lang);
+          
+          // Merge with existing cards
+          updatedCards = mergeAstroData(cards, patch);
+          cardsUpdated = true;
+          
+          // Re-build prompt with updated cards
+          const { user: updatedUser } = buildCombinedPrompt(lang, updatedCards, question);
+          analysis = `Based on the updated cards, here's the analysis:\n\n${updatedUser}\n\n[LLM analysis would be generated here using the updated prompt]`;
+          
+          console.log(`Data fetch completed. Updated cards with: ${patch.provenance?.prokerala.join(', ')}`);
+        } catch (error) {
+          console.error('Error fetching missing data:', error);
+          analysis += `\n\nNote: Some additional data could not be fetched. Analysis based on available cards only.`;
+        }
+      }
     }
     
-    // Build combined prompt
-    const { system, user, combined } = buildCombinedPrompt(
-      lang,
-      astroData,
-      evidenceBundle || { files: [], cards: [], lang, extractedAt: new Date().toISOString() },
-      question
-    );
+    // Check if LLM response indicates more data needed
+    if (isDataNeededResponse(analysis)) {
+      dataNeeded = extractDataNeededFromResponse(analysis);
+      console.log(`LLM requested additional data: ${dataNeeded.join(', ')}`);
+    }
     
-    // For now, return the prompt structure (in production, this would call LLM)
-    const analysis = `Based on the provided data, here's the analysis:\n\n${user}\n\n[LLM analysis would be generated here using the above prompt]`;
-    
-    const response: ChatWithEvidenceResponse = {
+    const response: ChatResponse = {
       success: true,
       analysis,
-      cardsUsed: {
-        prokerala: !!astroData,
-        evidence: !!(evidenceBundle && evidenceBundle.cards.length > 0)
-      },
+      dataNeeded: dataNeeded.length > 0 ? dataNeeded : undefined,
+      cardsUpdated,
       warnings: []
     };
     
-    // Add warnings if no cards available
-    if (!astroData && (!evidenceBundle || evidenceBundle.cards.length === 0)) {
-      response.warnings?.push('No astrological data available for analysis');
+    // Add warnings if no basic data available
+    if (cards.d1.length === 0) {
+      response.warnings?.push('No D1 planets available for analysis');
     }
     
     return NextResponse.json(response, { 
