@@ -1,46 +1,63 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".next",
+  "version": 2,
+  "name": "zstro-ai-astrology",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 60,
-      "memory": 1024
+      "maxDuration": 30
     }
   },
   "env": {
-    "NODE_OPTIONS": "--max_old_space_size=2048"
+    "NODE_ENV": "production"
   },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD || echo 'build'",
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; media-src 'self'; object-src 'none'; child-src 'none'; frame-src 'none'; worker-src 'self' blob:; manifest-src 'self';"
+        }
       ]
-    },
+    }
+  ],
+  "redirects": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, s-maxage=60, stale-while-revalidate=300" }
-      ]
-    },
-    {
-      "source": "/api/healthz",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
+      "source": "/",
+      "destination": "/chat",
+      "permanent": false
     }
   ],
   "rewrites": [
     {
-      "source": "/api/healthz",
-      "destination": "/api/healthz"
+      "source": "/api/health",
+      "destination": "/api/health"
     }
   ]
 }
