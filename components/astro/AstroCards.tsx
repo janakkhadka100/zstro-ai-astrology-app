@@ -15,23 +15,25 @@ interface AstroCardsProps {
   lang?: Lang;
   className?: string;
   showThemeToggle?: boolean;
+  data?: AstroData | null;
 }
 
 export default function AstroCards({ 
   lang = "ne", 
   className = "", 
-  showThemeToggle = true 
+  showThemeToggle = true,
+  data: propData = null
 }: AstroCardsProps) {
   const { data: session, status } = useSession();
-  const [data, setData] = useState<AstroData | null>(null);
+  const [data, setData] = useState<AstroData | null>(propData);
   const [analysis, setAnalysis] = useState<AstroAnalysisResponse | null>(null);
   const [debug, setDebug] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string>("");
   const [q, setQ] = useState<string>(
-    lang === "ne" 
-      ? "मेरो कुण्डलीको मुख्य योग/दोष र दशा प्रभाव?" 
+    lang === "ne"
+      ? "मेरो कुण्डलीको मुख्य योग/दोष र दशा प्रभाव?"
       : "What are the main yogas/doshas and dasha effects in my horoscope?"
   );
 
@@ -101,14 +103,21 @@ export default function AstroCards({
     }
   };
 
-  // Bootstrap data on authentication
+  // Bootstrap data on authentication (only if no propData provided)
   useEffect(() => {
-    if (status === "authenticated") {
+    if (status === "authenticated" && !propData) {
       const newRequestId = Math.random().toString(36).substr(2, 9);
       setRequestId(newRequestId);
       fetchData(newRequestId);
     }
-  }, [status, lang]);
+  }, [status, lang, propData]);
+
+  // Update data when propData changes
+  useEffect(() => {
+    if (propData) {
+      setData(propData);
+    }
+  }, [propData]);
 
   // Show skeleton while loading initial data
   if (loading && !data) {

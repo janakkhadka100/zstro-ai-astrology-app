@@ -98,6 +98,27 @@ export interface DashaItem {
   to: string;   // ISO
 }
 
+export interface YoginiItem {
+  level: "current" | "maha";
+  planet: PlanetName;
+  from: string; // ISO
+  to: string;   // ISO
+}
+
+export interface ShadbalaItem {
+  planet: PlanetName;
+  value: number;
+  unit?: string;
+  components?: {
+    sthana: number;
+    dig: number;
+    kala: number;
+    cheshta: number;
+    naisargika: number;
+    drik: number;
+  };
+}
+
 export interface AstroData {
   profile?: {
     name?: string;
@@ -117,6 +138,7 @@ export interface AstroData {
   doshas: (YogaExplained|DoshaItem)[];
   shadbala: ShadbalaRow[];
   dashas: DashaItem[];
+  yogini: YoginiItem[];
   lang?: "ne" | "en";
   // Provenance tracking - which data came from where
   provenance?: {

@@ -63,6 +63,11 @@ export function userPrompt(lang: "ne" | "en", data: AstroData, question: string)
     `${d.system || "Vimshottari"}|${d.level || "Maha"}|${d.planet}|${d.from}→${d.to}`
   ).join("\n") || "";
 
+  // Yogini (short)
+  const yogini = data.yogini?.slice(0, 3).map((y: any) => 
+    `Yogini|${y.level || "current"}|${y.planet}|${y.from}→${y.to}`
+  ).join("\n") || "";
+
   const header = isNepali
     ? `# D1 ग्रहहरू
 ${d1}
@@ -82,6 +87,9 @@ ${doshas ? `\n${doshas}` : ""}
 
 # दशा (छोटो)
 ${dashas}
+
+# योगिनी
+${yogini}
 
 प्रश्न:
 ${question}
@@ -105,6 +113,9 @@ ${doshas ? `\n${doshas}` : ""}
 
 # Dashas (short)
 ${dashas}
+
+# Yogini
+${yogini}
 
 Question:
 ${question}

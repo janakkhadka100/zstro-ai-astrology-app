@@ -6,14 +6,14 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 import {
-  user,
+  userss,
   chat,
   type User,
   document,
   type Suggestion,
   suggestion,
   type Message,
-  message,
+  messagess,
   vote,
   astrologicalData,
   district,
@@ -33,26 +33,26 @@ export const db = drizzle(client);
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    return await db.select().from(users).where(eq(users.email, email));
   } catch (error) {
-    console.error('Failed to get user from database');
+    console.error('Failed to get users from database');
     throw error;
   }
 }
 
-export async function createUser(email: string, password: string, name: string, gender: "male" | "female" | "other", dob: string, time: string, latitude: string, longitude: string, timezone: string, place: string, role: "user" | "admin" = "user"): Promise<{ id: string } | null> {
+export async function createUser(email: string, password: string, name: string, gender: "male" | "female" | "other", dob: string, time: string, latitude: string, longitude: string, timezone: string, place: string, role: "users" | "admin" = "users"): Promise<{ id: string } | null> {
   const salt = genSaltSync(10);
   const hash = hashSync(password, salt);
 
   try {
     const [newUser] = await db
-      .insert(user)
+      .insert(users)
       .values({ email, password: hash, name, gender, dob, time, latitude, longitude, timezone, place, role })
-      .returning({ id: user.id });
+      .returning({ id: users.id });
 
-    return newUser || null; // Ensure we return the user object containing `id`
+    return newUser || null; // Ensure we return the users object containing `id`
   } catch (error) {
-    console.error('Failed to create user in database', error);
+    console.error('Failed to create users in database', error);
     throw error;
   }
 }
@@ -60,25 +60,25 @@ export async function getUserByResetToken(token: string) {
   try {
     const [selectedUser] = await db
       .select()
-      .from(user)
-      .where(eq(user.resetToken, token));
+      .from(users)
+      .where(eq(users.resetToken, token));
 
     return selectedUser;
   } catch (error) {
-    console.error('Failed to get user by reset token from database', error);
+    console.error('Failed to get users by reset token from database', error);
     throw error;
   }
 }
-export async function getUserById(userId: string) {
+export async function getUserById(usersId: string) {
   try {
     const [selectedUser] = await db
       .select()
-      .from(user)
-      .where(eq(user.id, userId));
+      .from(users)
+      .where(eq(users.id, usersId));
 
     return selectedUser;
   } catch (error) {
-    console.error('Failed to get user by id from database', error);
+    console.error('Failed to get users by id from database', error);
     throw error;
   }
 }
@@ -86,18 +86,18 @@ export async function getUserByEmail(email: string) {
   try {
     const [selectedUser] = await db
       .select()
-      .from(user)
-      .where(eq(user.email, email));
+      .from(users)
+      .where(eq(users.email, email));
 
     return selectedUser;
   } catch (error) {
-    console.error('Failed to get user by email from database', error);
+    console.error('Failed to get users by email from database', error);
     throw error;
   }
 }
 
 export async function updateUserPassword(
-  userId: string,
+  usersId: string,
   newPassword: string
 ) {
   try {
@@ -107,15 +107,15 @@ export async function updateUserPassword(
 
     // Update password in the database
     const [updatedUser] = await db
-      .update(user)
+      .update(users)
       .set({
         password: hashedPassword
       })
-      .where(eq(user.id, userId))
+      .where(eq(users.id, usersId))
       .returning({
-        id: user.id,
-        email: user.email,
-        password: user.password,
+        id: users.id,
+        email: users.email,
+        password: users.password,
       });
 
     return updatedUser;
@@ -126,7 +126,7 @@ export async function updateUserPassword(
 }
 
 export async function resetTokenUpdate(
-  userId: string,
+  usersId: string,
   resetToken: string | null,
   resetTokenExpiry: Date | null,
 ) {
@@ -134,16 +134,16 @@ export async function resetTokenUpdate(
 
     // Update resetToken and resetTokenExpiry in the database
     const [updatedUser] = await db
-      .update(user)
+      .update(users)
       .set({
         resetToken,
         resetTokenExpiry: resetTokenExpiry,  // This will be a valid timestamp now
       })
-      .where(eq(user.id, userId))
+      .where(eq(users.id, usersId))
       .returning({
-        id: user.id,
-        resetToken: user.resetToken,
-        resetTokenExpiry: user.resetTokenExpiry,
+        id: users.id,
+        resetToken: users.resetToken,
+        resetTokenExpiry: users.resetTokenExpiry,
       });
     return updatedUser;
   } catch (error) {
@@ -155,18 +155,18 @@ export async function resetTokenUpdate(
 
 export async function saveChat({
   id,
-  userId,
+  usersId,
   title,
 }: {
   id: string;
-  userId: string;
+  usersId: string;
   title: string;
 }) {
   try {
     return await db.insert(chat).values({
       id,
       createdAt: new Date(),
-      userId,
+      usersId,
       title,
     });
   } catch (error) {
@@ -178,7 +178,7 @@ export async function saveChat({
 export async function deleteChatById({ id }: { id: string }) {
   try {
     await db.delete(vote).where(eq(vote.chatId, id));
-    await db.delete(message).where(eq(message.chatId, id));
+    await db.delete(messages).where(eq(messages.chatId, id));
 
     return await db.delete(chat).where(eq(chat.id, id));
   } catch (error) {
@@ -192,10 +192,10 @@ export async function getChatsByUserId({ id }: { id: string }) {
     return await db
       .select()
       .from(chat)
-      .where(eq(chat.userId, id))
+      .where(eq(chat.usersId, id))
       .orderBy(desc(chat.createdAt));
   } catch (error) {
-    console.error('Failed to get chats by user from database');
+    console.error('Failed to get chats by users from database');
     throw error;
   }
 }
@@ -210,11 +210,11 @@ export async function getChatById({ id }: { id: string }) {
   }
 }
 
-export async function saveMessages({ messages }: { messages: Array<Message> }) {
+export async function saveMessages({ messagess }: { messagess: Array<Message> }) {
   try {
-    return await db.insert(message).values(messages);
+    return await db.insert(messages).values(messagess);
   } catch (error) {
-    console.error('Failed to save messages in database', error);
+    console.error('Failed to save messagess in database', error);
     throw error;
   }
 }
@@ -223,43 +223,43 @@ export async function getMessagesByChatId({ id }: { id: string }) {
   try {
     return await db
       .select()
-      .from(message)
-      .where(eq(message.chatId, id))
-      .orderBy(asc(message.createdAt));
+      .from(messages)
+      .where(eq(messages.chatId, id))
+      .orderBy(asc(messages.createdAt));
   } catch (error) {
-    console.error('Failed to get messages by chat id from database', error);
+    console.error('Failed to get messagess by chat id from database', error);
     throw error;
   }
 }
 
 export async function voteMessage({
   chatId,
-  messageId,
+  messagesId,
   type,
 }: {
   chatId: string;
-  messageId: string;
+  messagesId: string;
   type: 'up' | 'down';
 }) {
   try {
     const [existingVote] = await db
       .select()
       .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
+      .where(and(eq(vote.messagesId, messagesId)));
 
     if (existingVote) {
       return await db
         .update(vote)
         .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
+        .where(and(eq(vote.messagesId, messagesId), eq(vote.chatId, chatId)));
     }
     return await db.insert(vote).values({
       chatId,
-      messageId,
+      messagesId,
       isUpvoted: type === 'up',
     });
   } catch (error) {
-    console.error('Failed to upvote message in database', error);
+    console.error('Failed to upvote messages in database', error);
     throw error;
   }
 }
@@ -278,13 +278,13 @@ export async function saveDocument({
   title,
   kind,
   content,
-  userId,
+  usersId,
 }: {
   id: string;
   title: string;
   kind: ArtifactKind;
   content: string;
-  userId: string;
+  usersId: string;
 }) {
   try {
     return await db.insert(document).values({
@@ -292,7 +292,7 @@ export async function saveDocument({
       title,
       kind,
       content,
-      userId,
+      usersId,
       createdAt: new Date(),
     });
   } catch (error) {
@@ -392,9 +392,9 @@ export async function getSuggestionsByDocumentId({
 
 export async function getMessageById({ id }: { id: string }) {
   try {
-    return await db.select().from(message).where(eq(message.id, id));
+    return await db.select().from(messages).where(eq(messages.id, id));
   } catch (error) {
-    console.error('Failed to get message by id from database');
+    console.error('Failed to get messages by id from database');
     throw error;
   }
 }
@@ -407,31 +407,31 @@ export async function deleteMessagesByChatIdAfterTimestamp({
   timestamp: Date;
 }) {
   try {
-    const messagesToDelete = await db
-      .select({ id: message.id })
-      .from(message)
+    const messagessToDelete = await db
+      .select({ id: messages.id })
+      .from(messages)
       .where(
-        and(eq(message.chatId, chatId), gte(message.createdAt, timestamp)),
+        and(eq(messages.chatId, chatId), gte(messages.createdAt, timestamp)),
       );
 
-    const messageIds = messagesToDelete.map((message) => message.id);
+    const messagesIds = messagessToDelete.map((messages) => messages.id);
 
-    if (messageIds.length > 0) {
+    if (messagesIds.length > 0) {
       await db
         .delete(vote)
         .where(
-          and(eq(vote.chatId, chatId), inArray(vote.messageId, messageIds)),
+          and(eq(vote.chatId, chatId), inArray(vote.messagesId, messagesIds)),
         );
 
       return await db
-        .delete(message)
+        .delete(messages)
         .where(
-          and(eq(message.chatId, chatId), inArray(message.id, messageIds)),
+          and(eq(messages.chatId, chatId), inArray(messages.id, messagesIds)),
         );
     }
   } catch (error) {
     console.error(
-      'Failed to delete messages by id after timestamp from database',
+      'Failed to delete messagess by id after timestamp from database',
     );
     throw error;
   }
@@ -452,24 +452,24 @@ export async function updateChatVisiblityById({
   }
 }
 
-export async function getAstroDataByUserIdAndType({ userId, type }: { userId: string; type: string }) {
+export async function getAstroDataByUserIdAndType({ usersId, type }: { usersId: string; type: string }) {
   try {
     const [selectedData] = await db
       .select()
       .from(astrologicalData)
-      .where(and(eq(astrologicalData.userId, userId), eq(astrologicalData.type, type)))
+      .where(and(eq(astrologicalData.usersId, usersId), eq(astrologicalData.type, type)))
       .orderBy(desc(astrologicalData.createdAt));
     return selectedData;
   } catch (error) {
-    console.error('Failed to get Astrological Data by user id and type from database', error);
+    console.error('Failed to get Astrological Data by users id and type from database', error);
     throw error;
   }
 }
 
-export const storeAstrologicalData = async (userId: string, type: string, content: any) => {
+export const storeAstrologicalData = async (usersId: string, type: string, content: any) => {
   try {
     await db.insert(astrologicalData).values({
-      userId,
+      usersId,
       type,
       content: content, // Ensure full JSON is stored
       createdAt: new Date(),
@@ -504,11 +504,11 @@ export async function getDistrictById({ id }: { id: string }) {
   }
 }
 
-export async function isCoinSufficient(userId: string): Promise<boolean> {
+export async function isCoinSufficient(usersId: string): Promise<boolean> {
   const [existingUser] = await db
     .select()
-    .from(user)
-    .where(eq(user.id, userId));
+    .from(users)
+    .where(eq(users.id, usersId));
 
   if (!existingUser) throw new Error('User not found');
   const coins = existingUser.coins ?? 0;
@@ -516,58 +516,58 @@ export async function isCoinSufficient(userId: string): Promise<boolean> {
   return coins >= 10;
 }
 
-export async function updateUserMessageStats(userId: string): Promise<void> {
+export async function updateUserMessageStats(usersId: string): Promise<void> {
   const [existingUser] = await db
     .select()
-    .from(user)
-    .where(eq(user.id, userId));
+    .from(users)
+    .where(eq(users.id, usersId));
 
   if (!existingUser) throw new Error('User not found');
 
   const now = new Date();
   
   await db
-    .update(user)
+    .update(users)
     .set({
       coins: (existingUser.coins && existingUser.coins > 10) ? existingUser.coins - 10 :  0,
       lastMessageAt: now,
     })
-    .where(eq(user.id, userId));
+    .where(eq(users.id, usersId));
 }
 
 export async function storeSubscriptionInfo(
-  userId: string,
+  usersId: string,
   subscriptionDetails: { coins: number; status?: "active" | "canceled" | "expired" },
 ): Promise<void> {
   try {
     await db.insert(subscription).values({
-      userId,
+      usersId,
       coins: subscriptionDetails.coins,
       status: subscriptionDetails.status || "active",
       createdAt: new Date(),
     });
     await db
-      .update(user)
+      .update(users)
       .set({
-        coins: sql`${user.coins} + ${subscriptionDetails.coins}`,
+        coins: sql`${users.coins} + ${subscriptionDetails.coins}`,
       })
-      .where(eq(user.id, userId));
+      .where(eq(users.id, usersId));
   } catch (error) {
     console.error("Failed to store subscription information:", error);
     throw error;
   }
 }
 
-export async function storePaymentInfo(userId: string, paymentDetails: any): Promise<boolean> {
+export async function storePaymentInfo(usersId: string, paymentDetails: any): Promise<boolean> {
   try {
     const [existingPayment] = await db
     .select()
     .from(payment)
-    .where(and(eq(payment.userId, userId), eq(payment.transactionId, paymentDetails.transactionId)));
+    .where(and(eq(payment.usersId, usersId), eq(payment.transactionId, paymentDetails.transactionId)));
 
     if (!existingPayment) {
       await db.insert(payment).values({
-        userId,
+        usersId,
         ...paymentDetails,
         createdAt: new Date(),
       });
@@ -580,45 +580,45 @@ export async function storePaymentInfo(userId: string, paymentDetails: any): Pro
   }
 }
 
-export async function upgradeToPremium(userId: string): Promise<{ isPremium: boolean }> {
+export async function upgradeToPremium(usersId: string): Promise<{ isPremium: boolean }> {
   try {
     const [existingUser] = await db
       .select()
-      .from(user)
-      .where(eq(user.id, userId));
+      .from(users)
+      .where(eq(users.id, usersId));
 
     if (!existingUser) throw new Error("User not found");
 
     await db
-      .update(user)
+      .update(users)
       .set({ isPremium: true })
-      .where(eq(user.id, userId));
+      .where(eq(users.id, usersId));
 
     return { isPremium: true };
   } catch (error) {
-    console.error("Error upgrading user to premium:", error);
+    console.error("Error upgrading users to premium:", error);
     throw error;
   }
 }
-export async function getPaymentHistoryByUserId(userId: string) {
+export async function getPaymentHistoryByUserId(usersId: string) {
   try {
     return await db
       .select()
       .from(payment)
-      .where(eq(payment.userId, userId))
+      .where(eq(payment.usersId, usersId))
       .orderBy(desc(payment.createdAt));
   } catch (error) {
-    console.error('Failed to get payment history by user id from database', error);
+    console.error('Failed to get payment history by users id from database', error);
     throw error;
   }
 }
-export async function checkUserSubscriptionAndUpdateIfExpired(userId: string) {
+export async function checkUserSubscriptionAndUpdateIfExpired(usersId: string) {
   try {
-    // Fetch the latest subscription (assuming one per user)
+    // Fetch the latest subscription (assuming one per users)
     const result = await db
       .select()
       .from(subscription)
-      .where(eq(subscription.userId, userId))
+      .where(eq(subscription.usersId, usersId))
       .orderBy(desc(subscription.createdAt))
       .limit(1);
 
@@ -632,14 +632,14 @@ export async function checkUserSubscriptionAndUpdateIfExpired(userId: string) {
         .where(eq(subscription.id, sub.id));
 
       await db
-        .update(user)
+        .update(users)
         .set({ isPremium: false })
-        .where(eq(user.id, userId));
+        .where(eq(users.id, usersId));
     }
 
     return sub;
   } catch (error) {
-    console.error('Failed to check user subscription from database', error);
+    console.error('Failed to check users subscription from database', error);
     throw error;
   }
 }
@@ -647,10 +647,10 @@ export async function getAllUsers(): Promise<User[]> {
   try {
     return await db
       .select()
-      .from(user)
-      .orderBy(asc(user.role));
+      .from(users)
+      .orderBy(asc(users.role));
   } catch (error) {
-    console.error('Failed to get all users from database', error);
+    console.error('Failed to get all userss from database', error);
     throw error;
   }
 }
@@ -662,8 +662,8 @@ export type PaymentWithUser = {
   transactionId: string;
   transactionCode: string;
   createdAt: Date;
-  name: string | null;   // from user
-  email: string | null;  // from user
+  name: string | null;   // from users
+  email: string | null;  // from users
 };
 export async function getAllPayments(): Promise<PaymentWithUser[]> {
   try {
@@ -676,29 +676,29 @@ export async function getAllPayments(): Promise<PaymentWithUser[]> {
         transactionId: payment.transactionId,
         transactionCode: payment.transactionCode,
         createdAt: payment.createdAt,
-        name: user.name,
-        email: user.email,
+        name: users.name,
+        email: users.email,
       })
       .from(payment)
-      .leftJoin(user, eq(payment.userId, user.id))
+      .leftJoin(users, eq(payment.usersId, users.id))
       .orderBy(desc(payment.createdAt));
   } catch (error) {
     console.error("Failed to get all payments from database", error);
     throw error;
   }
 }
-export async function updateUserCoins(userId: string, coinsToAdd: number) {
+export async function updateUserCoins(usersId: string, coinsToAdd: number) {
   try {
     await db
-      .update(user)
+      .update(users)
       .set({
-        coins: sql`${user.coins} + ${coinsToAdd}`,
+        coins: sql`${users.coins} + ${coinsToAdd}`,
       })
-      .where(eq(user.id, userId));
+      .where(eq(users.id, usersId));
 
     return { success: true };
   } catch (error) {
-    console.error("Failed to update user coins", error);
+    console.error("Failed to update users coins", error);
     throw error;
   }
 }
@@ -707,13 +707,13 @@ export async function getUserRole(
 ): Promise<{ role: string } | null> {
   try {
     const [selectedUser] = await db
-      .select({ role: user.role })
-      .from(user)
-      .where(eq(user.email, email));
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.email, email));
 
     return selectedUser || null;
   } catch (error) {
-    console.error("Failed to get user role from database", error);
+    console.error("Failed to get users role from database", error);
     throw error;
   }
 }
