@@ -5,7 +5,7 @@ export type UserProfile = {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
+  image?: string;
   birthDate?: string;
   birthTime?: string;
   birthPlace?: string;
