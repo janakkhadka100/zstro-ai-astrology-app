@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { AstroData, AstroAnalysisResponse } from "@/lib/astrology/types";
 import { AstroCardSkeleton, Skeleton } from "@/components/shared/Skeleton";
 import { ErrorNotice, LoadingWithError } from "@/components/shared/ErrorNotice";
@@ -19,22 +20,24 @@ export default function AstroCards({
   className = "", 
   showThemeToggle = true 
 }: AstroCardsProps) {
+  const { data: session, status } = useSession();
   const [data, setData] = useState<AstroData | null>(null);
   const [analysis, setAnalysis] = useState<AstroAnalysisResponse | null>(null);
   const [debug, setDebug] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string>("");
   const [q, setQ] = useState<string>(
     lang === "ne" 
       ? "मेरो कुण्डलीको मुख्य योग/दोष र दशा प्रभाव?" 
       : "What are the main yogas/doshas and dasha effects in my horoscope?"
   );
 
-  const fetchData = async () => {
+  const fetchData = async (currentRequestId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/astrology/data", { 
+      const response = await fetch("/api/astro/bootstrap", { 
         method: "POST", 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lang }) 
@@ -45,16 +48,24 @@ export default function AstroCards({
       }
       
       const json = await response.json();
-      setData(json);
+      
+      // Race condition guard - only update if this is still the latest request
+      if (currentRequestId === requestId) {
+        setData(json.data);
+      }
     } catch (error) {
       console.error("Error fetching astro data:", error);
-      setError(
-        error instanceof Error 
-          ? error.message 
-          : getString("dataLoadFailed", lang)
-      );
+      if (currentRequestId === requestId) {
+        setError(
+          error instanceof Error 
+            ? error.message 
+            : getString("dataLoadFailed", lang)
+        );
+      }
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -88,9 +99,14 @@ export default function AstroCards({
     }
   };
 
-  useEffect(() => { 
-    fetchData(); 
-  }, [lang]);
+  // Bootstrap data on authentication
+  useEffect(() => {
+    if (status === "authenticated") {
+      const newRequestId = Math.random().toString(36).substr(2, 9);
+      setRequestId(newRequestId);
+      fetchData(newRequestId);
+    }
+  }, [status, lang]);
 
   // Show skeleton while loading initial data
   if (loading && !data) {
@@ -202,11 +218,21 @@ export default function AstroCards({
                 data.yogas.map(yoga => (
                   <li key={yoga.key} className="flex items-start gap-2">
                     <span className="text-green-500 mt-1">•</span>
-                    <div>
+                    <div className="flex-1">
                       <div className="font-medium text-gray-900 dark:text-gray-100">{yoga.label}</div>
+                      {yoga.why && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {lang === "ne" ? "किन" : "Why"}: {yoga.why}
+                        </div>
+                      )}
                       {yoga.factors && yoga.factors.length > 0 && (
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                           {lang === "ne" ? "कारक" : "Factors"}: {yoga.factors.join(", ")}
+                        </div>
+                      )}
+                      {yoga.group && (
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          {yoga.group}
                         </div>
                       )}
                     </div>

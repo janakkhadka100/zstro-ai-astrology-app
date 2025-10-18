@@ -28,7 +28,9 @@ export interface DivisionalBlock {
 export interface YogaItem { 
   key: string; 
   label: string; 
-  factors?: string[]; 
+  factors?: string[];
+  why?: string;
+  group?: 'Rajyoga' | 'Pancha-Mahapurusha' | 'Chandra-based' | 'General';
 }
 
 export interface DoshaItem { 

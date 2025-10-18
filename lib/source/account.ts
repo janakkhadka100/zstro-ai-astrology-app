@@ -3,6 +3,7 @@
 
 import { AccountCard, AstroData, D1PlanetRow, YogaItem, DoshaItem, ShadbalaRow, DashaItem } from '@/lib/astrology/types';
 import { wholeSignHouse, getSignLabel } from '@/lib/astrology/util';
+import { detectAll, dedupByKey } from '@/lib/astrology/detectors';
 
 export function mapAccountToAstroData(account: AccountCard, lang: "ne" | "en" = "ne"): AstroData {
   const provenance: string[] = [];
@@ -36,8 +37,17 @@ export function mapAccountToAstroData(account: AccountCard, lang: "ne" | "en" = 
   }
 
   // Map yogas and doshas
-  const yogas: YogaItem[] = account.cachedData?.yogas || [];
+  let yogas: YogaItem[] = account.cachedData?.yogas || [];
   const doshas: DoshaItem[] = account.cachedData?.doshas || [];
+  
+  // Detect additional yogas from D1 data
+  if (d1.length > 0 && ascSignId) {
+    const detectedYogas = detectAll(ascSignId as any, d1, lang);
+    yogas = dedupByKey([...yogas, ...detectedYogas]);
+    if (detectedYogas.length > 0) {
+      provenance.push("yogas.detected");
+    }
+  }
   
   if (yogas.length > 0) {
     provenance.push("yogas");

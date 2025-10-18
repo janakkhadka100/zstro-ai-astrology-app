@@ -20,7 +20,7 @@ describe("Account to AstroData Mapping", () => {
     expect(astroData.ascSignId).toBeGreaterThan(0);
     expect(astroData.ascSignId).toBeLessThanOrEqual(12);
     expect(astroData.d1).toHaveLength(9);
-    expect(astroData.yogas).toHaveLength(2);
+    expect(astroData.yogas.length).toBeGreaterThanOrEqual(2);
     expect(astroData.doshas).toHaveLength(1);
     expect(astroData.shadbala).toHaveLength(3);
     expect(astroData.dashas).toHaveLength(3);

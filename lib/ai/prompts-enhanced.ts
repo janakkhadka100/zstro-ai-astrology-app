@@ -244,9 +244,12 @@ export class EnhancedPromptBuilder {
     }
 
     if (astroData.yogas?.length) {
+      const yogaDetails = astroData.yogas.map(y => 
+        y.why ? `${y.label} (${y.why})` : y.label
+      ).join('; ');
       instructions += isNepali 
-        ? `- योग: ${astroData.yogas.length} योग\n`
-        : `- Yogas: ${astroData.yogas.length} yogas\n`;
+        ? `- योग: ${yogaDetails}\n`
+        : `- Yogas: ${yogaDetails}\n`;
     }
 
     if (astroData.doshas?.length) {
