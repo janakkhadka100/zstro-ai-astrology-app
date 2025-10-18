@@ -6,10 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, MapPin, User, Clock, Star, Download, Share2 } from 'lucide-react';
-import NorthIndianChart from '../charts/NorthIndianChart';
-import { pdfService } from '@/lib/services/pdf-service';
+import { Loader2, MapPin, User, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { ResultSkeleton } from '../ResultSkeleton';
+import { KundaliResultZ, type KundaliResult } from '@/lib/schemas/kundali';
+import dynamic from 'next/dynamic';
+
+const ChartView = dynamic(() => import('../ChartView'), { 
+  ssr: false, 
+  loading: () => <div className="p-6 opacity-70">Loading chart…</div> 
+});
+
+const PDFButton = dynamic(() => import('../PDFButton'), { 
+  ssr: false, 
+  loading: () => <div className="h-12 bg-gray-200 rounded animate-pulse"></div> 
+});
 
 // Nepal districts data
 const NEPAL_DISTRICTS = [
@@ -18,7 +30,6 @@ const NEPAL_DISTRICTS = [
   { name: 'भक्तपुर', province: 'बागमती', lat: 27.6710, lon: 85.4298 },
   { name: 'पोखरा', province: 'गण्डकी', lat: 28.2096, lon: 83.9856 },
   { name: 'चितवन', province: 'बागमती', lat: 27.5290, lon: 84.3542 },
-  { name: 'ललितपुर', province: 'बागमती', lat: 27.6667, lon: 85.3333 },
   { name: 'धनगढी', province: 'सुदूरपश्चिम', lat: 28.6855, lon: 80.6216 },
   { name: 'बुटवल', province: 'लुम्बिनी', lat: 27.7000, lon: 83.4483 },
   { name: 'बिराटनगर', province: 'कोशी', lat: 26.4525, lon: 87.2718 },
@@ -57,7 +68,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [kundaliData, setKundaliData] = useState<any>(null);
+  const [kundaliData, setKundaliData] = useState<KundaliResult | null>(null);
 
   const handleInputChange = (field: keyof BirthDetails, value: string | number) => {
     setFormData(prev => ({
@@ -126,7 +137,8 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
         throw new Error('कुण्डली बनाउन सकिएन');
       }
 
-      const data = await response.json();
+      const json = await response.json();
+      const data = KundaliResultZ.parse(json);
       setKundaliData(data);
       
       if (onKundaliGenerated) {
@@ -139,47 +151,25 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
     }
   };
 
-  const handleDownloadPDF = async () => {
-    if (!kundaliData) return;
-
-    try {
-      setIsLoading(true);
-      await pdfService.generateKundaliPDF(
-        kundaliData,
-        {
-          name: formData.name,
-          birthDate: formData.birthDate,
-          birthTime: formData.birthTime,
-          place: formData.place,
-        }
-      );
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      setError('PDF download गर्न सकिएन');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Panel - Form */}
         <div>
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 text-center">
-            <Loader2 className="w-16 h-16 animate-spin text-purple-600 mx-auto mb-4" />
-            <p className="text-xl font-semibold text-gray-800">
-              तपाईंको कुण्डली बनाउँदै...
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              कृपया प्रतीक्षा गर्नुहोस्
-            </p>
-          </div>
-        </div>
-      )}
+          {/* Loading Overlay */}
+          {isLoading && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center">
+                <Loader2 className="w-16 h-16 animate-spin text-purple-600 mx-auto mb-4" />
+                <p className="text-xl font-semibold text-gray-800 dark:text-white">
+                  कुण्डली बनाइरहेको...
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                  कृपया प्रतीक्षा गर्नुहोस्
+                </p>
+              </div>
+            </div>
+          )}
 
           <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
             <CardHeader className="text-center">
@@ -191,283 +181,252 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
               </CardDescription>
             </CardHeader>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Input */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-700 dark:text-gray-300 font-medium">
-                <User className="inline w-4 h-4 mr-2" />
-                नाम
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="आफ्नो नाम लेख्नुहोस्"
-                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
-                disabled={isLoading}
-              />
-            </div>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-gray-700 dark:text-gray-300 font-medium">
+                    <User className="inline w-4 h-4 mr-2" />
+                    नाम
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="आफ्नो नाम लेख्नुहोस्"
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
+                    disabled={isLoading}
+                  />
+                </div>
 
-            {/* Birth Date */}
-            <div className="space-y-2">
-              <Label htmlFor="birthDate" className="text-gray-700 dark:text-gray-300 font-medium">
-                <Clock className="inline w-4 h-4 mr-2" />
-                जन्म मिति
-              </Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={formData.birthDate}
-                onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
-                disabled={isLoading}
-                max={new Date().toISOString().split('T')[0]}
-                min="1900-01-01"
-              />
-            </div>
+                {/* Birth Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate" className="text-gray-700 dark:text-gray-300 font-medium">
+                    <Clock className="inline w-4 h-4 mr-2" />
+                    जन्म मिति
+                  </Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
+                    disabled={isLoading}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                  />
+                </div>
 
-            {/* Birth Time */}
-            <div className="space-y-2">
-              <Label htmlFor="birthTime" className="text-gray-700 dark:text-gray-300 font-medium">
-                <Clock className="inline w-4 h-4 mr-2" />
-                जन्म समय
-              </Label>
-              <Input
-                id="birthTime"
-                type="time"
-                value={formData.birthTime}
-                onChange={(e) => handleInputChange('birthTime', e.target.value)}
-                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
-                disabled={isLoading}
-              />
-            </div>
+                {/* Birth Time */}
+                <div className="space-y-2">
+                  <Label htmlFor="birthTime" className="text-gray-700 dark:text-gray-300 font-medium">
+                    <Clock className="inline w-4 h-4 mr-2" />
+                    जन्म समय
+                  </Label>
+                  <Input
+                    id="birthTime"
+                    type="time"
+                    value={formData.birthTime}
+                    onChange={(e) => handleInputChange('birthTime', e.target.value)}
+                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
+                    disabled={isLoading}
+                  />
+                </div>
 
-            {/* Birth Place */}
-            <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300 font-medium">
-                <MapPin className="inline w-4 h-4 mr-2" />
-                जन्म स्थान
-              </Label>
-              <Select
-                value={formData.place}
-                onValueChange={handleDistrictChange}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-purple-500">
-                  <SelectValue placeholder="जन्म स्थान चयन गर्नुहोस्" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  {NEPAL_DISTRICTS.map((district) => (
-                    <SelectItem
-                      key={district.name}
-                      value={district.name}
-                      className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      {district.name} ({district.province})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Birth Place */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700 dark:text-gray-300 font-medium">
+                    <MapPin className="inline w-4 h-4 mr-2" />
+                    जन्म स्थान
+                  </Label>
+                  <Select
+                    value={formData.place}
+                    onValueChange={handleDistrictChange}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-purple-500">
+                      <SelectValue placeholder="जन्म स्थान चयन गर्नुहोस्" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NEPAL_DISTRICTS.map((district) => (
+                        <SelectItem
+                          key={district.name}
+                          value={district.name}
+                          className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          {district.name} ({district.province})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                <p className="text-red-200 text-sm">{error}</p>
-              </div>
-            )}
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <p className="text-red-200 text-sm">{error}</p>
+                  </div>
+                )}
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 text-lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  कुण्डली बनाइरहेको...
-                </>
-              ) : (
-                'कुण्डली बनाउनुहोस्'
-              )}
-            </Button>
-          </form>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 text-lg"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      कुण्डली बनाइरहेको...
+                    </>
+                  ) : (
+                    'कुण्डली बनाउनुहोस्'
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Kundali Results */}
-          {kundaliData && (
+        {/* Right Panel - Results */}
+        <div>
+          {kundaliData ? (
             <ErrorBoundary>
-              <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 space-y-6">
-              {/* Birth Details */}
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                  {formData.name} को कुण्डली
-                </h2>
-                <div className="grid md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">जन्म मिति:</span>
-                    <p className="font-semibold">{formData.birthDate}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">जन्म समय:</span>
-                    <p className="font-semibold">{formData.birthTime}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">जन्म स्थान:</span>
-                    <p className="font-semibold">{formData.place}</p>
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
+                {/* Birth Details */}
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+                    {formData.name} को कुण्डली
+                  </h2>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-600 dark:text-gray-300">जन्म मिति:</span>
+                      <span className="ml-2 text-gray-800 dark:text-white">{formData.birthDate}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600 dark:text-gray-300">जन्म समय:</span>
+                      <span className="ml-2 text-gray-800 dark:text-white">{formData.birthTime}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600 dark:text-gray-300">जन्म स्थान:</span>
+                      <span className="ml-2 text-gray-800 dark:text-white">{formData.place}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600 dark:text-gray-300">लग्न:</span>
+                      <span className="ml-2 text-gray-800 dark:text-white">{kundaliData.ascSignLabel}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Ascendant - Prominent Display */}
-              <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-2">लग्न (Ascendant)</h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-4xl font-bold">{kundaliData.ascSignLabel}</p>
-                    <p className="text-purple-200 text-sm">Sign ID: {kundaliData.ascSignId}</p>
-                  </div>
-                  <Star className="w-16 h-16 text-purple-200" />
-                </div>
-              </div>
-
-              {/* North Indian Chart */}
-              <div id="north-indian-chart">
-                <NorthIndianChart 
-                  planets={kundaliData.d1 || []}
-                  ascendant={{
-                    signId: kundaliData.ascSignId,
-                    signLabel: kundaliData.ascSignLabel
-                  }}
-                />
-              </div>
-
-              {/* Planets */}
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  ग्रहहरू (Planets)
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {kundaliData.d1?.map((planet: any, index: number) => (
-                    <div 
-                      key={index}
-                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-400 hover:shadow-md transition-all"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-bold text-gray-800">{planet.planet}</h4>
-                          <p className="text-sm text-gray-600">ग्रह</p>
-                        </div>
-                        {planet.retro && (
-                          <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">
-                            वक्री (R)
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-gray-600">राशि:</span>
-                          <p className="font-semibold text-purple-700">{planet.signLabel}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">घर:</span>
-                          <p className="font-semibold text-blue-700">{planet.house}</p>
-                        </div>
+                {/* Tabs */}
+                <Tabs defaultValue="chart" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="chart">Chart View</TabsTrigger>
+                    <TabsTrigger value="planets">Planets</TabsTrigger>
+                    <TabsTrigger value="yog-dosh">Yog/Dosh</TabsTrigger>
+                    <TabsTrigger value="pdf">PDF</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="chart" className="mt-6">
+                    <ChartView data={kundaliData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="planets" className="mt-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white">ग्रह स्थिति</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-gray-300 dark:border-gray-600">
+                          <thead>
+                            <tr className="bg-gray-50 dark:bg-gray-700">
+                              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">ग्रह</th>
+                              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">राशि</th>
+                              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">घर</th>
+                              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">स्थिति</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {kundaliData.d1.map((planet, index) => (
+                              <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">{planet.planet}</td>
+                                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">{planet.signLabel}</td>
+                                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">{planet.house}</td>
+                                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
+                                  {planet.retro ? 'वक्री' : 'सामान्य'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Yogas - Benefic */}
-              {kundaliData.yogas && kundaliData.yogas.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-green-500">✨</span>
-                    योगहरू (Auspicious Yogas)
-                  </h3>
-                  <div className="space-y-3">
-                    {kundaliData.yogas.map((yoga: any, index: number) => (
-                      <div 
-                        key={index}
-                        className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-4"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                            {index + 1}
+                  </TabsContent>
+                  
+                  <TabsContent value="yog-dosh" className="mt-6">
+                    <div className="space-y-6">
+                      {/* Yogas */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">योग</h3>
+                        {kundaliData.yogas.length > 0 ? (
+                          <div className="space-y-3">
+                            {kundaliData.yogas.map((yoga, index) => (
+                              <div key={index} className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                                <h4 className="font-semibold text-green-800 dark:text-green-300">{yoga.label}</h4>
+                                <p className="text-sm text-green-600 dark:text-green-400">
+                                  {yoga.factors.join(', ')}
+                                </p>
+                              </div>
+                            ))}
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-green-900 mb-1">{yoga.label}</h4>
-                            <p className="text-sm text-gray-600">
-                              Factors: {yoga.factors.join(', ')}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Key: {yoga.key}
-                            </p>
-                          </div>
-                        </div>
+                        ) : (
+                          <p className="text-gray-500 dark:text-gray-400">कुनै योग फेला परेन</p>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* Doshas - Warning */}
-              {kundaliData.doshas && kundaliData.doshas.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-orange-500">⚠️</span>
-                    दोषहरू (Doshas)
-                  </h3>
-                  <div className="space-y-3">
-                    {kundaliData.doshas.map((dosha: any, index: number) => (
-                      <div 
-                        key={index}
-                        className="bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-500 rounded-lg p-4"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                            ⚠
+                      {/* Doshas */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">दोष</h3>
+                        {kundaliData.doshas.length > 0 ? (
+                          <div className="space-y-3">
+                            {kundaliData.doshas.map((dosha, index) => (
+                              <div key={index} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                <h4 className="font-semibold text-red-800 dark:text-red-300">{dosha.label}</h4>
+                                <p className="text-sm text-red-600 dark:text-red-400">
+                                  {dosha.factors.join(', ')}
+                                </p>
+                              </div>
+                            ))}
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-orange-900 mb-1">{dosha.label}</h4>
-                            <p className="text-sm text-gray-600">
-                              Affected by: {dosha.factors.join(', ')}
-                            </p>
-                            <p className="text-xs text-orange-700 mt-2">
-                              💡 उपाय को लागि ज्योतिषी संग परामर्श गर्नुहोस्
-                            </p>
-                          </div>
-                        </div>
+                        ) : (
+                          <p className="text-gray-500 dark:text-gray-400">कुनै दोष फेला परेन</p>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                <button 
-                  onClick={handleDownloadPDF}
-                  disabled={isLoading}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Download className="w-5 h-5" />
-                  {isLoading ? 'PDF बनाइरहेको...' : 'PDF डाउनलोड गर्नुहोस्'}
-                </button>
-                <button className="bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition-all flex items-center justify-center gap-2">
-                  <Share2 className="w-5 h-5" />
-                  शेयर गर्नुहोस्
-                </button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="pdf" className="mt-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white">PDF Download</h3>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        आफ्नो कुण्डली रिपोर्ट PDF मा डाउनलोड गर्नुहोस्
+                      </p>
+                      <PDFButton 
+                        kundaliData={kundaliData} 
+                        birthDetails={{
+                          name: formData.name,
+                          birthDate: formData.birthDate,
+                          birthTime: formData.birthTime,
+                          place: formData.place
+                        }}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
-            </div>
             </ErrorBoundary>
+          ) : (
+            <ResultSkeleton />
           )}
-        </CardContent>
-          </Card>
         </div>
       </div>
     </div>
