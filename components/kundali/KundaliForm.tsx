@@ -6,12 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2, MapPin, User, Clock, Calendar as CalendarIcon2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ne } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { Loader2, MapPin, User, Clock } from 'lucide-react';
 
 // Nepal districts data
 const NEPAL_DISTRICTS = [
@@ -174,34 +169,20 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
             {/* Birth Date */}
             <div className="space-y-2">
-              <Label className="text-white font-medium">
-                <CalendarIcon2 className="inline w-4 h-4 mr-2" />
+              <Label htmlFor="birthDate" className="text-white font-medium">
+                <Clock className="inline w-4 h-4 mr-2" />
                 जन्म मिति
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-white/20 border-white/30 text-white hover:bg-white/30",
-                      !formData.birthDate && "text-gray-300"
-                    )}
-                    disabled={isLoading}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.birthDate ? format(new Date(formData.birthDate), 'PPP', { locale: ne }) : 'मिति चयन गर्नुहोस्'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.birthDate ? new Date(formData.birthDate) : undefined}
-                    onSelect={(date) => handleInputChange('birthDate', date ? format(date, 'yyyy-MM-dd') : '')}
-                    disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="birthDate"
+                type="date"
+                value={formData.birthDate}
+                onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300 focus:border-blue-400"
+                disabled={isLoading}
+                max={new Date().toISOString().split('T')[0]}
+                min="1900-01-01"
+              />
             </div>
 
             {/* Birth Time */}

@@ -1,4 +1,4 @@
-import KundaliForm from '@/components/KundaliForm';
+import KundaliForm from '@/components/kundali/KundaliForm';
 
 export default function KundaliPage() {
   return (
