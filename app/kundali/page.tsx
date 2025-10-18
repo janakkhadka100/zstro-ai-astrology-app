@@ -2,16 +2,8 @@ import KundaliForm from '@/components/kundali/KundaliForm';
 
 export default function KundaliPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            कुण्डली जनरेटर
-          </h1>
-          <p className="text-xl text-gray-300">
-            आफ्नो जन्म विवरण प्रविष्ट गरेर कुण्डली बनाउनुहोस्
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <KundaliForm />
       </div>
     </div>

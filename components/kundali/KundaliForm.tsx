@@ -162,7 +162,10 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Panel - Form */}
+        <div>
       {/* Loading Overlay */}
       {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -178,21 +181,21 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
         </div>
       )}
 
-      <Card className="border-0 shadow-xl bg-white/10 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-white mb-2">
-            कुण्डली जनरेटर
-          </CardTitle>
-          <CardDescription className="text-gray-300 text-lg">
-            आफ्नो जन्म विवरण प्रविष्ट गरेर कुण्डली बनाउनुहोस्
-          </CardDescription>
-        </CardHeader>
+          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                🧘‍♂️ जन्म विवरण
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-300">
+                आफ्नो जन्म विवरण प्रविष्ट गरेर कुण्डली बनाउनुहोस्
+              </CardDescription>
+            </CardHeader>
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Input */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white font-medium">
+              <Label htmlFor="name" className="text-gray-700 dark:text-gray-300 font-medium">
                 <User className="inline w-4 h-4 mr-2" />
                 नाम
               </Label>
@@ -202,14 +205,14 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="आफ्नो नाम लेख्नुहोस्"
-                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300 focus:border-blue-400"
+                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
                 disabled={isLoading}
               />
             </div>
 
             {/* Birth Date */}
             <div className="space-y-2">
-              <Label htmlFor="birthDate" className="text-white font-medium">
+              <Label htmlFor="birthDate" className="text-gray-700 dark:text-gray-300 font-medium">
                 <Clock className="inline w-4 h-4 mr-2" />
                 जन्म मिति
               </Label>
@@ -218,7 +221,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                 type="date"
                 value={formData.birthDate}
                 onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300 focus:border-blue-400"
+                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
                 disabled={isLoading}
                 max={new Date().toISOString().split('T')[0]}
                 min="1900-01-01"
@@ -227,7 +230,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
             {/* Birth Time */}
             <div className="space-y-2">
-              <Label htmlFor="birthTime" className="text-white font-medium">
+              <Label htmlFor="birthTime" className="text-gray-700 dark:text-gray-300 font-medium">
                 <Clock className="inline w-4 h-4 mr-2" />
                 जन्म समय
               </Label>
@@ -236,14 +239,14 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                 type="time"
                 value={formData.birthTime}
                 onChange={(e) => handleInputChange('birthTime', e.target.value)}
-                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300 focus:border-blue-400"
+                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500"
                 disabled={isLoading}
               />
             </div>
 
             {/* Birth Place */}
             <div className="space-y-2">
-              <Label className="text-white font-medium">
+              <Label className="text-gray-700 dark:text-gray-300 font-medium">
                 <MapPin className="inline w-4 h-4 mr-2" />
                 जन्म स्थान
               </Label>
@@ -252,15 +255,15 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                 onValueChange={handleDistrictChange}
                 disabled={isLoading}
               >
-                <SelectTrigger className="bg-white/20 border-white/30 text-white focus:border-blue-400">
+                <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-purple-500">
                   <SelectValue placeholder="जन्म स्थान चयन गर्नुहोस्" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   {NEPAL_DISTRICTS.map((district) => (
                     <SelectItem
                       key={district.name}
                       value={district.name}
-                      className="text-white hover:bg-gray-700"
+                      className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       {district.name} ({district.province})
                     </SelectItem>
@@ -462,7 +465,9 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
             </div>
           )}
         </CardContent>
-      </Card>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
