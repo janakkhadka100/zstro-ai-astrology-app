@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import ProfileCard from "@/components/ProfileCard";
 import ResultSummaryCard from "@/components/ResultSummaryCard";
 import PlanetTableCard from "@/components/PlanetTableCard";
@@ -6,8 +5,7 @@ import YogDoshGrid from "@/components/YogDoshGrid";
 import PDFButtonCard from "@/components/PDFButtonCard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import KundaliForm from '@/components/kundali/KundaliForm';
-
-const ChartView = dynamic(()=>import("@/components/ChartView"), { ssr:false, loading: () => <div className="h-56 bg-muted rounded-2xl" /> });
+import ClientChartView from "@/components/ClientChartView";
 
 // Real data using normalized astrology system
 async function getData() {
@@ -65,7 +63,7 @@ export default async function KundaliPage() {
           <ErrorBoundary>
             <div className="space-y-4">
               <div id="kundali-chart" className="h-56 rounded-2xl border bg-background p-3">
-                <ChartView />
+                <ClientChartView />
               </div>
               <PlanetTableCard rows={data.planets} />
               <YogDoshGrid yogas={data.yogas} doshas={data.doshas} />
