@@ -73,3 +73,12 @@ export function validateSignId(signId: number): boolean {
 export function validateHouseNumber(house: number): boolean {
   return house >= 1 && house <= 12;
 }
+
+export function formatPlanetRow(planet: { planet: string; signId: number; house: number }, lang: "ne" | "en" = "en"): string {
+  const sign = signLabel(planet.signId, lang);
+  const houseText = lang === "ne" ? 
+    `H${planet.house}${planet.house === 1 ? 'ल' : planet.house === 4 ? 'च' : planet.house === 7 ? 'स' : 'द'}` :
+    `H${planet.house}${planet.house === 1 ? 'st' : planet.house === 2 ? 'nd' : planet.house === 3 ? 'rd' : 'th'}`;
+  
+  return `${planet.planet} in ${sign} (${houseText})`;
+}

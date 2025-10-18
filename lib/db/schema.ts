@@ -100,6 +100,97 @@ export const cacheInvalidation = pgTable('cache_invalidation', {
   invalidatedAtIdx: index('cache_invalidation_invalidated_at_idx').on(table.invalidatedAt),
 }));
 
+// Additional tables for compatibility
+export const chat = pgTable('chat', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  title: text('title').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const document = pgTable('document', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const suggestion = pgTable('suggestion', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const vote = pgTable('vote', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  suggestionId: uuid('suggestion_id').references(() => suggestion.id, { onDelete: 'cascade' }).notNull(),
+  value: integer('value').notNull(), // 1 or -1
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const astrologicalData = pgTable('astrological_data', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  data: jsonb('data').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const district = pgTable('district', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  province: text('province').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const payment = pgTable('payment', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  amount: integer('amount').notNull(),
+  currency: text('currency').default('NPR').notNull(),
+  status: text('status').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const subscription = pgTable('subscription', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  plan: text('plan').notNull(),
+  status: text('status').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Export additional types
+export type Chat = typeof chat.$inferSelect;
+export type NewChat = typeof chat.$inferInsert;
+
+export type Document = typeof document.$inferSelect;
+export type NewDocument = typeof document.$inferInsert;
+
+export type Suggestion = typeof suggestion.$inferSelect;
+export type NewSuggestion = typeof suggestion.$inferInsert;
+
+export type Vote = typeof vote.$inferSelect;
+export type NewVote = typeof vote.$inferInsert;
+
+export type AstrologicalData = typeof astrologicalData.$inferSelect;
+export type NewAstrologicalData = typeof astrologicalData.$inferInsert;
+
+export type District = typeof district.$inferSelect;
+export type NewDistrict = typeof district.$inferInsert;
+
+export type Payment = typeof payment.$inferSelect;
+export type NewPayment = typeof payment.$inferInsert;
+
+export type Subscription = typeof subscription.$inferSelect;
+export type NewSubscription = typeof subscription.$inferInsert;
+
 // Export types for TypeScript
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

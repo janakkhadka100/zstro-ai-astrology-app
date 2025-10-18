@@ -1,7 +1,11 @@
 // app/astro-cards/page.tsx
 // Test page for AstroCards component
 
+import { Suspense } from "react";
 import AstroCards from "@/components/astro/AstroCards";
+
+// Force dynamic rendering to avoid prerender issues
+export const dynamic = 'force-dynamic';
 
 export default function AstroCardsPage() {
   return (
@@ -17,7 +21,9 @@ export default function AstroCardsPage() {
             </p>
           </div>
           
-          <AstroCards lang="ne" />
+          <Suspense fallback={<div className="text-center py-8">Loading astrology cards...</div>}>
+            <AstroCards lang="ne" />
+          </Suspense>
         </div>
       </div>
     </div>
