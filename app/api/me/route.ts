@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authConfig } from "@/app/(auth)/auth.config";
+import { auth } from "@/app/(auth)/auth";
 
 export async function GET() {
   try {
-    // Get session using the auth config
-    const session = await getServerSession(authConfig).catch(() => null);
+    // Get session using the auth function
+    const session = await auth();
     
     // Extract user from session
     const user = session?.user as any | undefined;
