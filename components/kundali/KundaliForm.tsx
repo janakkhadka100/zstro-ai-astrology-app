@@ -13,6 +13,8 @@ import { ErrorBoundary } from '../ErrorBoundary';
 import ResultSkeleton from '../ResultSkeleton';
 import DevStatus from '../DevStatus';
 import { KundaliResultZ, type KundaliResult } from '@/lib/schemas/kundali';
+import { buildAstroPrompt } from '@/lib/astro-prompt';
+import { HouseMismatchNotice } from '../HouseMismatchNotice';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 
@@ -74,6 +76,8 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kundaliData, setKundaliData] = useState<KundaliResult | null>(null);
+  const [normalizedData, setNormalizedData] = useState<any>(null);
+  const [mismatches, setMismatches] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('chart');
   const [lastApiMs, setLastApiMs] = useState<number | undefined>();
 
@@ -192,6 +196,11 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
       const data = KundaliResultZ.parse(json);
       setKundaliData(data);
       setLastApiMs(Date.now() - startTime);
+      
+      // Normalize the data for proper house computation
+      const { aiInput, mismatches: detectedMismatches } = buildAstroPrompt(data);
+      setNormalizedData(aiInput);
+      setMismatches(detectedMismatches);
       
       if (onKundaliGenerated) {
         onKundaliGenerated(data);
@@ -346,6 +355,9 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
           {kundaliData ? (
             <ErrorBoundary>
               <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
+                {/* House Mismatch Notice */}
+                <HouseMismatchNotice mismatches={mismatches} />
+
                 {/* Birth Details */}
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6">
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
@@ -400,11 +412,16 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                             </tr>
                           </thead>
                           <tbody>
-                            {kundaliData.d1.map((planet, index) => (
+                            {(normalizedData?.planets || kundaliData.d1).map((planet: any, index: number) => (
                               <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">{planet.planet}</td>
                                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">{planet.signLabel}</td>
-                                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">{planet.house}</td>
+                                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
+                                  {normalizedData ? planet.house : planet.house}
+                                  {normalizedData && planet.houseSource === 'derived' && (
+                                    <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">*</span>
+                                  )}
+                                </td>
                                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
                                   {planet.retro ? 'वक्री' : 'सामान्य'}
                                 </td>
