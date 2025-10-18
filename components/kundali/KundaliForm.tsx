@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, MapPin, User, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { ResultSkeleton } from '../ResultSkeleton';
+import ResultSkeleton from '../ResultSkeleton';
 import DevStatus from '../DevStatus';
 import { KundaliResultZ, type KundaliResult } from '@/lib/schemas/kundali';
 import dynamic from 'next/dynamic';
