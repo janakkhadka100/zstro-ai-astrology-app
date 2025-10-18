@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, MapPin, User, Clock, Star, Download, Share2 } from 'lucide-react';
+import NorthIndianChart from '../charts/NorthIndianChart';
 
 // Nepal districts data
 const NEPAL_DISTRICTS = [
@@ -303,6 +304,15 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                   <Star className="w-16 h-16 text-purple-200" />
                 </div>
               </div>
+
+              {/* North Indian Chart */}
+              <NorthIndianChart 
+                planets={kundaliData.d1 || []}
+                ascendant={{
+                  signId: kundaliData.ascSignId,
+                  signLabel: kundaliData.ascSignLabel
+                }}
+              />
 
               {/* Planets */}
               <div>
