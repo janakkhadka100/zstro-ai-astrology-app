@@ -9,18 +9,39 @@ import KundaliForm from '@/components/kundali/KundaliForm';
 
 const ChartView = dynamic(()=>import("@/components/ChartView"), { ssr:false, loading: () => <div className="h-56 bg-muted rounded-2xl" /> });
 
-// Mock data to avoid blank UI - replace with real data
+// Real data using normalized astrology system
 async function getData() {
-  return {
+  // This would typically fetch from your API or database
+  // For now, using the same mock data but structured for the normalized system
+  const mockApiData = {
+    ascSignId: 2, // वृष
     ascSignLabel: "वृष",
-    moonSignLabel: "मकर",
-    planets: [
-      { planet:"Sun", signLabel:"धनु", house:8, degree:null },
-      { planet:"Mars",signLabel:"धनु", house:8, degree:null },
-      { planet:"Saturn",signLabel:"कुम्भ", house:10, degree:null },
+    d1: [
+      { planet: "Sun", signId: 9, signLabel: "धनु", house: null },
+      { planet: "Mars", signId: 9, signLabel: "धनु", house: null },
+      { planet: "Saturn", signId: 11, signLabel: "कुम्भ", house: null },
+      { planet: "Moon", signId: 10, signLabel: "मकर", house: null },
     ],
     yogas: [{label:"गजकेसरी", factors:["Jupiter","Moon"]}],
     doshas: [{label:"मंगल दोष", factors:["Mars"]}],
+    lang: "ne"
+  };
+
+  // Use the normalization system
+  const { buildAstroPrompt } = await import("@/lib/astro-prompt");
+  const { aiInput } = buildAstroPrompt(mockApiData);
+
+  return {
+    ascSignLabel: aiInput.ascSignLabel,
+    moonSignLabel: aiInput.planets.find(p => p.planet === "Moon")?.signLabel || "Unknown",
+    planets: aiInput.planets.map(p => ({
+      planet: p.planet,
+      signLabel: p.signLabel,
+      house: p.house,
+      degree: p.degree
+    })),
+    yogas: aiInput.yogas,
+    doshas: aiInput.doshas,
   };
 }
 
