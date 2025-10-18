@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +59,8 @@ interface KundaliFormProps {
 }
 
 export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
+  const { profile } = useUserProfile();
+  
   const [formData, setFormData] = useState<BirthDetails>({
     name: '',
     birthDate: '',
@@ -103,6 +106,19 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
       setKundaliData(mockData);
     }
   }, [kundaliData, isLoading]);
+
+  // Prefill form with profile data when available
+  useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        name: profile.name || prev.name,
+        birthDate: profile.birthDate || prev.birthDate,
+        birthTime: profile.birthTime || prev.birthTime,
+        place: profile.birthPlace || prev.place,
+      }));
+    }
+  }, [profile]);
 
   const handleInputChange = (field: keyof BirthDetails, value: string | number) => {
     setFormData(prev => ({
