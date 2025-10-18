@@ -15,7 +15,7 @@ export async function GET() {
           id: user.id ?? "",
           name: user.name ?? "",
           email: user.email ?? "",
-          avatar: user.image ?? "",
+          image: user.image ?? "",
           // Domain-specific astrology fields saved at signup:
           birthDate: user.birthDate ?? "",   // e.g., "1990-05-15"
           birthTime: user.birthTime ?? "",   // e.g., "10:30"
