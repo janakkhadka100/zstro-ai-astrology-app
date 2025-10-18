@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, MapPin, User, Clock, Star, Download, Share2 } from 'lucide-react';
 import NorthIndianChart from '../charts/NorthIndianChart';
 import { pdfService } from '@/lib/services/pdf-service';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 // Nepal districts data
 const NEPAL_DISTRICTS = [
@@ -150,8 +151,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
           birthDate: formData.birthDate,
           birthTime: formData.birthTime,
           place: formData.place,
-        },
-        'north-indian-chart'
+        }
       );
     } catch (error) {
       console.error('PDF generation failed:', error);
@@ -298,7 +298,8 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
           {/* Kundali Results */}
           {kundaliData && (
-            <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 space-y-6">
+            <ErrorBoundary>
+              <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 space-y-6">
               {/* Birth Details */}
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">
@@ -463,6 +464,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                 </button>
               </div>
             </div>
+            </ErrorBoundary>
           )}
         </CardContent>
           </Card>

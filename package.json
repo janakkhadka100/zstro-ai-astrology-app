@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "next lint && biome lint --write --unsafe",
     "lint:fix": "next lint --fix && biome lint --write --unsafe",
+    "typecheck": "tsc --noEmit",
     "format": "biome format --write",
     "test": "jest",
     "test:watch": "jest --watch",

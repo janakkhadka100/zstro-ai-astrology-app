@@ -8,9 +8,58 @@ import Footer from '@/components/Footer';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'ZSTRO AI',
-  description: 'Nepals First AI Astrology Service',
+  metadataBase: new URL('https://zstro-ai-astrology.vercel.app'),
+  title: {
+    default: 'ZSTRO AI ASTROLOGY - Nepal\'s First AI Astrology Service',
+    template: '%s | ZSTRO AI ASTROLOGY'
+  },
+  description: 'Generate accurate Kundali charts, daily horoscopes, and astrological compatibility reports with AI-powered analysis. Nepal\'s premier astrology service.',
+  keywords: ['astrology', 'kundali', 'horoscope', 'Nepal', 'AI', 'birth chart', 'compatibility', 'zodiac'],
+  authors: [{ name: 'ZSTRO AI' }],
+  creator: 'ZSTRO AI',
+  publisher: 'ZSTRO AI',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://zstro-ai-astrology.vercel.app',
+    siteName: 'ZSTRO AI ASTROLOGY',
+    title: 'ZSTRO AI ASTROLOGY - Nepal\'s First AI Astrology Service',
+    description: 'Generate accurate Kundali charts, daily horoscopes, and astrological compatibility reports with AI-powered analysis.',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'ZSTRO AI ASTROLOGY',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ZSTRO AI ASTROLOGY - Nepal\'s First AI Astrology Service',
+    description: 'Generate accurate Kundali charts, daily horoscopes, and astrological compatibility reports with AI-powered analysis.',
+    images: ['/twitter-image.png'],
+    creator: '@zstroai',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'your-google-verification-code',
+  },
 };
 
 export const viewport = {
