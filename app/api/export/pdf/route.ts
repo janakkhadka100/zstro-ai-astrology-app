@@ -3,6 +3,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { isFeatureEnabled } from '@/lib/config/features';
+import { createSecurityMiddleware, SECURITY_CONFIGS, secureResponse } from '@/lib/security/middleware';
+import { ExportRequestSchema } from '@/lib/security/validators';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +20,13 @@ interface ExportRequest {
 
 export async function POST(req: NextRequest) {
   try {
+    // Apply security middleware
+    const securityMiddleware = createSecurityMiddleware(SECURITY_CONFIGS.export);
+    const securityResponse = await securityMiddleware(req);
+    if (securityResponse.status !== 200) {
+      return securityResponse;
+    }
+
     // Check if export feature is enabled
     if (!isFeatureEnabled('export')) {
       return NextResponse.json(
@@ -66,12 +75,9 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    return NextResponse.json(response, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'private, max-age=3600', // 1 hour
-      }
+    const responseObj = NextResponse.json(response, { status: 200 });
+    return secureResponse(responseObj, {
+      cache: 'public-long'
     });
 
   } catch (error) {

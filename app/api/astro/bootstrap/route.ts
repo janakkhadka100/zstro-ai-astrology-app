@@ -6,11 +6,20 @@ import { BootstrapRequest, BootstrapResponse } from '@/lib/astrology/types';
 import { getAccountCard, mapAccountToAstroData , validateAccountCard } from '@/lib/source/account';
 import { cacheBootstrapData, getCachedBootstrapData } from '@/lib/perf/cache';
 import { isFeatureEnabled } from '@/lib/config/features';
+import { createSecurityMiddleware, SECURITY_CONFIGS, secureResponse } from '@/lib/security/middleware';
+import { ProfileSchema } from '@/lib/security/validators';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
+    // Apply security middleware
+    const securityMiddleware = createSecurityMiddleware(SECURITY_CONFIGS.bootstrap);
+    const securityResponse = await securityMiddleware(req);
+    if (securityResponse.status !== 200) {
+      return securityResponse;
+    }
+
     const body = await req.json() as BootstrapRequest;
     const { lang } = body;
     
@@ -79,13 +88,9 @@ export async function POST(req: NextRequest) {
       data: astroData
     };
 
-    return NextResponse.json(response, { 
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=1800', // 30 minutes
-        'X-Cache': 'MISS'
-      }
+    const responseObj = NextResponse.json(response, { status: 200 });
+    return secureResponse(responseObj, {
+      cache: 'public-medium'
     });
 
   } catch (error) {
