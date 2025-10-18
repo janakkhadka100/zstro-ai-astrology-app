@@ -6,6 +6,7 @@
 import { AlertTriangle, X, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getString, type Lang } from "@/lib/utils/i18n";
+import { Skeleton } from "@/components/shared/Skeleton";
 
 interface ErrorNoticeProps {
   error: string;
@@ -27,11 +28,11 @@ export function ErrorNotice({
   const getErrorIcon = () => {
     switch (variant) {
       case "warning":
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="size-5 text-yellow-500" />;
       case "info":
-        return <AlertTriangle className="h-5 w-5 text-blue-500" />;
+        return <AlertTriangle className="size-5 text-blue-500" />;
       default:
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+        return <AlertTriangle className="size-5 text-red-500" />;
     }
   };
 
@@ -70,7 +71,7 @@ export function ErrorNotice({
             className="inline-flex items-center space-x-1 text-sm font-medium hover:underline"
             title={getString("retry", lang)}
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="size-4" />
             <span>{getString("retry", lang)}</span>
           </button>
         )}
@@ -81,7 +82,7 @@ export function ErrorNotice({
             className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
             title={getString("close", lang)}
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         )}
       </div>
@@ -181,7 +182,7 @@ export function SuccessNotice({
       "dark:bg-green-900/20 dark:border-green-800 dark:text-green-200",
       className
     )}>
-      <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+      <div className="size-5 rounded-full bg-green-500 flex items-center justify-center">
         <span className="text-white text-xs font-bold">✓</span>
       </div>
       
@@ -200,7 +201,7 @@ export function SuccessNotice({
           className="text-green-400 hover:text-green-600 dark:text-green-500 dark:hover:text-green-300"
           title={getString("close", lang)}
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </button>
       )}
     </div>

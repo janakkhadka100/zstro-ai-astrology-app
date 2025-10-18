@@ -208,15 +208,15 @@ export function CoinSystem({
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'purchase':
-        return <CreditCard className="h-4 w-4" />;
+        return <CreditCard className="size-4" />;
       case 'usage':
-        return <Minus className="h-4 w-4" />;
+        return <Minus className="size-4" />;
       case 'bonus':
-        return <Gift className="h-4 w-4" />;
+        return <Gift className="size-4" />;
       case 'refund':
-        return <Plus className="h-4 w-4" />;
+        return <Plus className="size-4" />;
       default:
-        return <Coins className="h-4 w-4" />;
+        return <Coins className="size-4" />;
     }
   };
 
@@ -240,14 +240,14 @@ export function CoinSystem({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold flex items-center space-x-2">
-              <Coins className="h-6 w-6 text-yellow-500" />
+              <Coins className="size-6 text-yellow-500" />
               <span>{coins.toLocaleString()}</span>
             </h2>
             <p className="text-muted-foreground">Available Coins</p>
           </div>
           <div className="text-right">
             <Badge variant="secondary" className="text-sm">
-              <TrendingUp className="h-3 w-3 mr-1" />
+              <TrendingUp className="size-3 mr-1" />
               Active
             </Badge>
           </div>
@@ -267,7 +267,7 @@ export function CoinSystem({
             {pricingTiers.map((tier) => (
               <Card key={tier.id} className={`p-6 ${tier.popular ? 'ring-2 ring-primary' : ''}`}>
                 {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <Badge className="bg-primary text-primary-foreground">
                       Most Popular
                     </Badge>
@@ -282,7 +282,7 @@ export function CoinSystem({
                       <span className="text-muted-foreground">USD</span>
                     </div>
                     <div className="flex items-center justify-center space-x-2 mt-1">
-                      <Coins className="h-5 w-5 text-yellow-500" />
+                      <Coins className="size-5 text-yellow-500" />
                       <span className="text-lg font-medium">
                         {tier.coins.toLocaleString()} Coins
                       </span>
@@ -297,7 +297,7 @@ export function CoinSystem({
                   <ul className="space-y-2">
                     {tier.features.map((feature, index) => (
                       <li key={index} className="flex items-center space-x-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="size-4 text-green-500 shrink-0" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -310,12 +310,12 @@ export function CoinSystem({
                   >
                     {loading ? (
                       <>
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        <Clock className="size-4 mr-2 animate-spin" />
                         Processing...
                       </>
                     ) : (
                       <>
-                        <CreditCard className="h-4 w-4 mr-2" />
+                        <CreditCard className="size-4 mr-2" />
                         Purchase Now
                       </>
                     )}
@@ -330,19 +330,19 @@ export function CoinSystem({
             <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="flex items-center justify-center p-3 border rounded-lg">
-                <CreditCard className="h-6 w-6 mr-2" />
+                <CreditCard className="size-6 mr-2" />
                 <span className="text-sm">Credit Card</span>
               </div>
               <div className="flex items-center justify-center p-3 border rounded-lg">
-                <Smartphone className="h-6 w-6 mr-2" />
+                <Smartphone className="size-6 mr-2" />
                 <span className="text-sm">Khalti</span>
               </div>
               <div className="flex items-center justify-center p-3 border rounded-lg">
-                <Banknote className="h-6 w-6 mr-2" />
+                <Banknote className="size-6 mr-2" />
                 <span className="text-sm">eSewa</span>
               </div>
               <div className="flex items-center justify-center p-3 border rounded-lg">
-                <Banknote className="h-6 w-6 mr-2" />
+                <Banknote className="size-6 mr-2" />
                 <span className="text-sm">ConnectIPS</span>
               </div>
             </div>
@@ -354,7 +354,7 @@ export function CoinSystem({
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-center">
-                <Gift className="h-12 w-12 mx-auto text-primary mb-4" />
+                <Gift className="size-12 mx-auto text-primary mb-4" />
                 <h3 className="text-xl font-semibold">Redeem Gift Code</h3>
                 <p className="text-muted-foreground">
                   Enter a gift code to receive bonus coins
@@ -376,7 +376,7 @@ export function CoinSystem({
                     disabled={!redeemCode.trim() || loading}
                   >
                     {loading ? (
-                      <Clock className="h-4 w-4 animate-spin" />
+                      <Clock className="size-4 animate-spin" />
                     ) : (
                       'Redeem'
                     )}
@@ -403,7 +403,7 @@ export function CoinSystem({
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Transaction History</h3>
               <Button variant="outline" size="sm">
-                <History className="h-4 w-4 mr-1" />
+                <History className="size-4 mr-1" />
                 Export
               </Button>
             </div>
@@ -411,7 +411,7 @@ export function CoinSystem({
             <div className="space-y-3">
               {transactions.length === 0 ? (
                 <div className="text-center py-8">
-                  <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <History className="size-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No transactions yet</p>
                 </div>
               ) : (
@@ -421,7 +421,7 @@ export function CoinSystem({
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         {getTransactionIcon(transaction.type)}
                       </div>
                       <div>

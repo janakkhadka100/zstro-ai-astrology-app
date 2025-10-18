@@ -325,7 +325,7 @@ export default function AstroCards({
               {lang === "ne" ? "तपाईंको प्रश्न" : "Your Question"}
             </label>
             <textarea 
-              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400" 
+              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400" 
               rows={3} 
               value={q} 
               onChange={e => setQ(e.target.value)}
@@ -348,7 +348,7 @@ export default function AstroCards({
             <div className="mt-4">
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center space-x-2">
-                  <Skeleton variant="circle" className="h-4 w-4" />
+                  <Skeleton variant="circle" className="size-4" />
                   <Skeleton variant="text" className="h-4 w-3/4" />
                 </div>
                 <div className="mt-2 space-y-1">

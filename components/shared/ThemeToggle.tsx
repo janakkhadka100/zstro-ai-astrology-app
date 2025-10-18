@@ -55,9 +55,9 @@ export function ThemeToggle({
         aria-label={getString("toggleTheme", lang)}
       >
         {isDark ? (
-          <Sun className="h-5 w-5" />
+          <Sun className="size-5" />
         ) : (
-          <Moon className="h-5 w-5" />
+          <Moon className="size-5" />
         )}
       </button>
     );
@@ -106,9 +106,9 @@ export function ThemeToggle({
       aria-label={getString("toggleTheme", lang)}
     >
       {isDark ? (
-        <Sun className="h-4 w-4" />
+        <Sun className="size-4" />
       ) : (
-        <Moon className="h-4 w-4" />
+        <Moon className="size-4" />
       )}
       {showLabel && (
         <span className="text-sm font-medium">

@@ -1,8 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense , useActionState, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { resetPassword, type ResetPasswordActionState } from '../actions';

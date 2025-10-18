@@ -60,7 +60,7 @@ const UserModal: React.FC<UserModalProps> = ({ user, isOpen, onClose, astroSumma
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 text-black dark:text-white rounded-lg shadow-lg w-full max-w-6xl p-6 relative animate-fadeIn max-h-[100vh]">
+      <div className="bg-white dark:bg-gray-900 text-black dark:text-white rounded-lg shadow-lg w-full max-w-6xl p-6 relative animate-fadeIn max-h-screen">
         <h2 className="text-2xl font-bold mb-6 text-center">User Profile</h2>
 
         <div className="flex flex-col lg:flex-row gap-6">

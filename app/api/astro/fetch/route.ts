@@ -6,6 +6,7 @@ import { FetchRequest, FetchResponse } from '@/lib/astrology/types';
 import { fetchScopedData } from '@/lib/source/prokerala';
 import { cacheProkeralaData, getCachedProkeralaData, generateProfileHash } from '@/lib/perf/cache';
 import { isFeatureEnabled } from '@/lib/config/features';
+import { publishUserPatch } from '@/lib/realtime/bus';
 
 export const runtime = 'nodejs';
 
@@ -91,6 +92,13 @@ export async function POST(req: NextRequest) {
     };
 
     console.log(`Fetch completed. Provenance: ${mergedPatch.provenance?.prokerala.join(', ')}`);
+
+    // Publish realtime update if feature is enabled
+    if (isFeatureEnabled('wsRealtime')) {
+      const userId = "test-user-123"; // In real app, get from auth session
+      await publishUserPatch(userId, mergedPatch);
+      console.log(`Published realtime patch for user: ${userId}`);
+    }
 
     const response: FetchResponse = {
       success: true,

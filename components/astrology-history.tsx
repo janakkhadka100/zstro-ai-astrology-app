@@ -181,7 +181,7 @@ export function AstrologyHistory({
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${
+        className={`size-4 ${
           i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
         }`}
       />
@@ -192,7 +192,7 @@ export function AstrologyHistory({
     return (
       <Card className="p-6">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading consultation history...</p>
         </div>
       </Card>
@@ -204,12 +204,12 @@ export function AstrologyHistory({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <History className="h-5 w-5" />
+          <History className="size-5" />
           <h2 className="text-lg font-semibold">Consultation History</h2>
           <Badge variant="secondary">{filteredConsultations.length}</Badge>
         </div>
         <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-1" />
+          <Download className="size-4 mr-1" />
           Export All
         </Button>
       </div>
@@ -219,7 +219,7 @@ export function AstrologyHistory({
         <div className="space-y-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Search consultations..."
               value={searchQuery}
@@ -231,7 +231,7 @@ export function AstrologyHistory({
           {/* Filters */}
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4" />
+              <Filter className="size-4" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -258,7 +258,7 @@ export function AstrologyHistory({
                 size="sm"
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
               >
-                {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                {sortOrder === 'asc' ? <SortAsc className="size-4" /> : <SortDesc className="size-4" />}
               </Button>
             </div>
           </div>
@@ -270,7 +270,7 @@ export function AstrologyHistory({
         {filteredConsultations.length === 0 ? (
           <Card className="p-6">
             <div className="text-center">
-              <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <History className="size-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Consultations Found</h3>
               <p className="text-muted-foreground">
                 {searchQuery ? 'No consultations match your search criteria.' : 'You haven\'t had any consultations yet.'}
@@ -302,11 +302,11 @@ export function AstrologyHistory({
                 {/* Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="size-4 text-muted-foreground" />
                     <span>{consultation.birthDate}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Clock className="size-4 text-muted-foreground" />
                     <span>{consultation.birthTime}</span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -345,7 +345,7 @@ export function AstrologyHistory({
                       size="sm"
                       onClick={() => onSelectConsultation?.(consultation)}
                     >
-                      <Eye className="h-4 w-4 mr-1" />
+                      <Eye className="size-4 mr-1" />
                       View
                     </Button>
                     <Button
@@ -353,7 +353,7 @@ export function AstrologyHistory({
                       size="sm"
                       onClick={() => onExportConsultation?.(consultation)}
                     >
-                      <Download className="h-4 w-4 mr-1" />
+                      <Download className="size-4 mr-1" />
                       Export
                     </Button>
                     <Button
@@ -362,7 +362,7 @@ export function AstrologyHistory({
                       onClick={() => onDeleteConsultation?.(consultation.id)}
                       className="text-red-600 hover:text-red-700"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="size-4" />
                     </Button>
                   </div>
                 </div>

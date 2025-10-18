@@ -99,7 +99,7 @@ export default function AstroCardsOnDemand({
     return (
       <div className={`p-4 ${className}`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full size-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-2 text-sm text-gray-600">
             {lang === 'ne' ? 'कार्डहरू लोड हुँदै...' : 'Loading cards...'}
           </p>
@@ -141,7 +141,7 @@ export default function AstroCardsOnDemand({
         <div className="flex items-center gap-2">
           {fetching && (
             <div className="flex items-center gap-2 text-sm text-blue-600">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full size-4 border-b-2 border-blue-600"></div>
               {lang === 'ne' ? 'डेटा तान्दै...' : 'Fetching data...'}
             </div>
           )}
@@ -252,7 +252,7 @@ export default function AstroCardsOnDemand({
               <ul className="space-y-1">
                 {cards.yogas.map((yoga, index) => (
                   <li key={index} className="text-sm flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span className="size-2 bg-green-500 rounded-full"></span>
                     {yoga.label}
                   </li>
                 ))}
@@ -270,7 +270,7 @@ export default function AstroCardsOnDemand({
               <ul className="space-y-1">
                 {cards.doshas.map((dosha, index) => (
                   <li key={index} className="text-sm flex items-center gap-2">
-                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    <span className="size-2 bg-red-500 rounded-full"></span>
                     {dosha.label}
                   </li>
                 ))}
@@ -358,19 +358,19 @@ export default function AstroCardsOnDemand({
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${coverage.d1 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`size-3 rounded-full ${coverage.d1 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
             <span>D1</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${coverage.divisionals.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`size-3 rounded-full ${coverage.divisionals.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
             <span>Divisionals ({coverage.divisionals.length})</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${coverage.yogas ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`size-3 rounded-full ${coverage.yogas ? 'bg-green-500' : 'bg-gray-300'}`}></div>
             <span>Yogas</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${coverage.shadbala ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`size-3 rounded-full ${coverage.shadbala ? 'bg-green-500' : 'bg-gray-300'}`}></div>
             <span>Shadbala</span>
           </div>
         </div>

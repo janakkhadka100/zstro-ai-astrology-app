@@ -3,8 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { BootstrapRequest, BootstrapResponse } from '@/lib/astrology/types';
-import { getAccountCard, mapAccountToAstroData } from '@/lib/source/account';
-import { validateAccountCard } from '@/lib/source/account';
+import { getAccountCard, mapAccountToAstroData , validateAccountCard } from '@/lib/source/account';
 import { cacheBootstrapData, getCachedBootstrapData } from '@/lib/perf/cache';
 import { isFeatureEnabled } from '@/lib/config/features';
 

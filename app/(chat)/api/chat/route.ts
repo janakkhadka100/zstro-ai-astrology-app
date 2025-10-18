@@ -13,7 +13,7 @@ import {
   getChatById,
   saveChat,
   saveMessages,
-} from '@/lib/db/queries';
+ updateUserMessageStats } from '@/lib/db/queries';
 import {
   generateUUID,
   getMostRecentUserMessage,
@@ -21,7 +21,6 @@ import {
 } from '@/lib/utils';
 
 import { generateTitleFromUserMessage } from '../../actions';
-import { updateUserMessageStats } from '@/lib/db/queries';
 
 export const maxDuration = 60;
 

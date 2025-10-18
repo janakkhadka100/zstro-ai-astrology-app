@@ -314,9 +314,9 @@ export function DownloadButtons({
           )}
         >
           {loading === 'pdf' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <FileText className="h-4 w-4" />
+            <FileText className="size-4" />
           )}
           <span className="text-sm font-medium">
             {lang === 'ne' ? 'PDF डाउनलोड' : 'Download PDF'}
@@ -334,9 +334,9 @@ export function DownloadButtons({
           )}
         >
           {loading === 'image' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Image className="h-4 w-4" />
+            <Image className="size-4" aria-hidden="true" />
           )}
           <span className="text-sm font-medium">
             {lang === 'ne' ? 'इमेज डाउनलोड' : 'Download Image'}
@@ -354,9 +354,9 @@ export function DownloadButtons({
           )}
         >
           {loading === 'text' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <Download className="size-4" />
           )}
           <span className="text-sm font-medium">
             {lang === 'ne' ? 'टेक्स्ट डाउनलोड' : 'Download Text'}
@@ -371,7 +371,7 @@ export function DownloadButtons({
             "transition-colors"
           )}
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="size-4" />
           <span className="text-sm font-medium">
             {lang === 'ne' ? 'साझा गर्नुहोस्' : 'Share'}
           </span>

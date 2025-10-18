@@ -52,13 +52,13 @@ export function ChartToggle({
       name: 'North Indian Chart',
       description: 'Traditional North Indian style with houses arranged in a square pattern',
       features: ['Square house arrangement', 'Ascendant at top', 'Traditional layout'],
-      icon: <Compass className="h-5 w-5" />
+      icon: <Compass className="size-5" />
     },
     south: {
       name: 'South Indian Chart',
       description: 'South Indian style with houses arranged in a diamond pattern',
       features: ['Diamond house arrangement', 'Ascendant at left', 'Modern layout'],
-      icon: <Map className="h-5 w-5" />
+      icon: <Map className="size-5" />
     }
   };
 
@@ -75,7 +75,7 @@ export function ChartToggle({
               onClick={() => handleChartTypeChange('north')}
               className="flex items-center space-x-1"
             >
-              <Compass className="h-4 w-4" />
+              <Compass className="size-4" />
               <span>North Indian</span>
             </Button>
             <Button
@@ -84,7 +84,7 @@ export function ChartToggle({
               onClick={() => handleChartTypeChange('south')}
               className="flex items-center space-x-1"
             >
-              <Map className="h-4 w-4" />
+              <Map className="size-4" />
               <span>South Indian</span>
             </Button>
           </div>
@@ -137,7 +137,7 @@ export function ChartToggle({
               disabled={isRotating}
               className="flex items-center space-x-1"
             >
-              <RotateCcw className={`h-4 w-4 ${isRotating ? 'animate-spin' : ''}`} />
+              <RotateCcw className={`size-4 ${isRotating ? 'animate-spin' : ''}`} />
               <span>Rotate</span>
             </Button>
             <Button
@@ -146,7 +146,7 @@ export function ChartToggle({
               onClick={onDownload}
               className="flex items-center space-x-1"
             >
-              <Download className="h-4 w-4" />
+              <Download className="size-4" />
               <span>Download</span>
             </Button>
             <Button
@@ -155,7 +155,7 @@ export function ChartToggle({
               onClick={onShare}
               className="flex items-center space-x-1"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="size-4" />
               <span>Share</span>
             </Button>
           </div>
@@ -166,17 +166,17 @@ export function ChartToggle({
           <div className="space-y-4">
             <div className="flex justify-center">
               {chartType === 'north' ? (
-                <div className="w-32 h-32 border-2 border-primary rounded-lg flex items-center justify-center">
+                <div className="size-32 border-2 border-primary rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <Compass className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <Compass className="size-8 mx-auto mb-2 text-primary" />
                     <p className="text-sm font-medium">North Indian</p>
                     <p className="text-xs text-muted-foreground">Square Layout</p>
                   </div>
                 </div>
               ) : (
-                <div className="w-32 h-32 border-2 border-primary rounded-lg flex items-center justify-center transform rotate-45">
-                  <div className="text-center transform -rotate-45">
-                    <Map className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <div className="size-32 border-2 border-primary rounded-lg flex items-center justify-center rotate-45">
+                  <div className="text-center -rotate-45">
+                    <Map className="size-8 mx-auto mb-2 text-primary" />
                     <p className="text-sm font-medium">South Indian</p>
                     <p className="text-xs text-muted-foreground">Diamond Layout</p>
                   </div>
@@ -212,7 +212,7 @@ export function ChartToggle({
       {/* Chart Information */}
       <Card className="p-4">
         <div className="flex items-center space-x-2 mb-3">
-          <Info className="h-5 w-5" />
+          <Info className="size-5" />
           <h3 className="text-lg font-semibold">Chart Information</h3>
         </div>
         

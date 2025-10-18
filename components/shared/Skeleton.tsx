@@ -62,7 +62,7 @@ export function ChatMessageSkeleton() {
   return (
     <div className="space-y-2">
       <div className="flex items-start space-x-2">
-        <Skeleton variant="circle" className="h-8 w-8" />
+        <Skeleton variant="circle" className="size-8" />
         <div className="flex-1 space-y-2">
           <Skeleton variant="text" className="h-4 w-1/4" />
           <div className="space-y-1">
@@ -102,7 +102,7 @@ export function ListSkeleton({ count = 5 }: { count?: number }) {
     <div className="space-y-2">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="flex items-center space-x-3 p-2">
-          <Skeleton variant="circle" className="h-8 w-8" />
+          <Skeleton variant="circle" className="size-8" />
           <div className="flex-1 space-y-1">
             <Skeleton variant="text" className="h-4 w-1/2" />
             <Skeleton variant="text" className="h-3 w-1/3" />

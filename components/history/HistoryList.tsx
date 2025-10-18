@@ -172,7 +172,7 @@ export function HistoryList({
             onClick={onCreateSession}
             className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             <span className="text-sm font-medium">
               {lang === 'ne' ? 'नयाँ' : 'New'}
             </span>
@@ -183,7 +183,7 @@ export function HistoryList({
       {/* Sessions List */}
       {sessions.length === 0 ? (
         <div className="text-center py-8">
-          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <MessageSquare className="size-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">
             {lang === 'ne' 
               ? 'कुनै सुरक्षित विश्लेषण छैन' 
@@ -206,18 +206,18 @@ export function HistoryList({
                   
                   <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
+                      <Clock className="size-4" />
                       <span>{formatDate(session.updatedAt)}</span>
                     </div>
                     
                     <div className="flex items-center space-x-1">
-                      <MessageSquare className="h-4 w-4" />
+                      <MessageSquare className="size-4" />
                       <span>{session.messageCount}</span>
                     </div>
                     
                     {session.snapshotCount > 0 && (
                       <div className="flex items-center space-x-1">
-                        <Eye className="h-4 w-4" />
+                        <Eye className="size-4" />
                         <span>{session.snapshotCount}</span>
                       </div>
                     )}
@@ -237,7 +237,7 @@ export function HistoryList({
                       className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                       title={lang === 'ne' ? 'खोल्नुहोस्' : 'Open'}
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="size-4" />
                     </button>
                   )}
                   
@@ -246,7 +246,7 @@ export function HistoryList({
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title={lang === 'ne' ? 'मेटाउनुहोस्' : 'Delete'}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               </div>

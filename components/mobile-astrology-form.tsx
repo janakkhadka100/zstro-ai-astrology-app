@@ -135,19 +135,19 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
     {
       id: 'basic',
       title: 'Basic Information',
-      icon: <Calendar className="h-4 w-4" />,
+      icon: <Calendar className="size-4" />,
       description: 'Your birth details',
     },
     {
       id: 'question',
       title: 'Your Question',
-      icon: <MessageCircle className="h-4 w-4" />,
+      icon: <MessageCircle className="size-4" />,
       description: 'What would you like to know?',
     },
     {
       id: 'preview',
       title: 'Preview & Submit',
-      icon: <CheckCircle className="h-4 w-4" />,
+      icon: <CheckCircle className="size-4" />,
       description: 'Review and submit your request',
     },
   ];
@@ -162,7 +162,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
                 {message.role === 'user' ? (
                   <div className="bg-primary/10 p-3 rounded-lg">
                     <div className="flex items-start space-x-2">
-                      <Star className="h-4 w-4 mt-0.5 text-primary" />
+                      <Star className="size-4 mt-0.5 text-primary" />
                       <div>
                         <p className="text-sm font-medium">Your Question</p>
                         <p className="text-sm">{message.content}</p>
@@ -172,7 +172,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
                 ) : (
                   <div className="bg-muted p-3 rounded-lg">
                     <div className="flex items-start space-x-2">
-                      <Zap className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                      <Zap className="size-4 mt-0.5 text-muted-foreground" />
                       <div>
                         <p className="text-sm font-medium">AI Response</p>
                         <div className="text-sm whitespace-pre-wrap">{message.content}</div>
@@ -185,7 +185,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
 
             {loading && (
               <div className="text-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p className="text-sm text-muted-foreground">Reading the cosmic patterns...</p>
               </div>
             )}
@@ -234,10 +234,10 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between p-0 h-auto">
                 <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="size-4" />
                   <span>Birth Information</span>
                 </div>
-                {activeSection === 'basic' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {activeSection === 'basic' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 mt-4">
@@ -253,7 +253,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
                   />
                   {validationErrors.birthDate && (
                     <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <AlertCircle className="h-3 w-3" />
+                      <AlertCircle className="size-3" />
                       <span>{validationErrors.birthDate}</span>
                     </p>
                   )}
@@ -270,7 +270,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
                   />
                   {validationErrors.birthTime && (
                     <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <AlertCircle className="h-3 w-3" />
+                      <AlertCircle className="size-3" />
                       <span>{validationErrors.birthTime}</span>
                     </p>
                   )}
@@ -288,7 +288,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
                 />
                 {validationErrors.birthPlace && (
                   <p className="text-xs text-red-500 flex items-center space-x-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <AlertCircle className="size-3" />
                     <span>{validationErrors.birthPlace}</span>
                   </p>
                 )}
@@ -301,10 +301,10 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between p-0 h-auto">
                 <div className="flex items-center space-x-2">
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="size-4" />
                   <span>Your Question</span>
                 </div>
-                {activeSection === 'question' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {activeSection === 'question' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 mt-4">
@@ -319,7 +319,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
                 />
                 {validationErrors.question && (
                   <p className="text-xs text-red-500 flex items-center space-x-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <AlertCircle className="size-3" />
                     <span>{validationErrors.question}</span>
                   </p>
                 )}
@@ -335,10 +335,10 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between p-0 h-auto">
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="size-4" />
                   <span>Preview & Submit</span>
                 </div>
-                {activeSection === 'preview' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {activeSection === 'preview' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 mt-4">
@@ -355,7 +355,7 @@ export function MobileAstrologyForm({ onDataSubmit, className = '' }: MobileAstr
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? (
                   <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                    <div className="animate-spin size-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                     Consulting the stars...
                   </>
                 ) : (

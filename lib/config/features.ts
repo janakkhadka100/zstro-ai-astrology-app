@@ -29,9 +29,39 @@ export function getFeatureFlags(): FeatureFlags {
   };
 }
 
-export function isFeatureEnabled(feature: keyof FeatureFlags): boolean {
-  const flags = getFeatureFlags();
-  return flags[feature];
+export function isFeatureEnabled(feature: keyof FeatureFlags | string): boolean {
+  // Handle both new format (keyof FeatureFlags) and legacy string format
+  if (feature in getFeatureFlags()) {
+    const flags = getFeatureFlags();
+    return flags[feature as keyof FeatureFlags];
+  }
+  
+  // Legacy string format support
+  switch (feature) {
+    case 'dark_mode':
+      return process.env.NEXT_PUBLIC_FF_DARK_MODE === '1';
+    case 'skeletons':
+      return process.env.NEXT_PUBLIC_FF_SKELETONS === '1';
+    case 'ws_realtime':
+    case 'wsRealtime':
+      return process.env.NEXT_PUBLIC_FF_WS_REALTIME === '1';
+    case 'export':
+      return process.env.NEXT_PUBLIC_FF_EXPORT === '1';
+    case 'history':
+      return process.env.NEXT_PUBLIC_FF_HISTORY === '1';
+    case 'notifications':
+      return process.env.NEXT_PUBLIC_FF_NOTIFICATIONS === '1';
+    case 'pwa':
+      return process.env.NEXT_PUBLIC_FF_PWA === '1';
+    case 'transit':
+      return process.env.NEXT_PUBLIC_FF_TRANSIT === '1';
+    case 'social':
+      return process.env.NEXT_PUBLIC_FF_SOCIAL === '1';
+    case 'consult':
+      return process.env.NEXT_PUBLIC_FF_CONSULT === '1';
+    default:
+      return false;
+  }
 }
 
 // Client-side feature flag hook

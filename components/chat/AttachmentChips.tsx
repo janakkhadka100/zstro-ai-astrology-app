@@ -56,7 +56,7 @@ export default function AttachmentChips({
             className="ml-1 hover:bg-black hover:bg-opacity-10 rounded-full p-0.5 transition-colors"
             title={lang === 'ne' ? 'हटाउनुहोस्' : 'Remove'}
           >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
