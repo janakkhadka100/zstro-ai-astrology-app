@@ -7,44 +7,24 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import KundaliForm from '@/components/kundali/KundaliForm';
 import ClientChartView from "@/components/ClientChartView";
 
-// Real data using normalized astrology system
-async function getData() {
-  // This would typically fetch from your API or database
-  // For now, using the same mock data but structured for the normalized system
-  const mockApiData = {
-    ascSignId: 2, // वृष
+// Mock data to avoid blank UI - will be replaced with real data
+function getData() {
+  return {
     ascSignLabel: "वृष",
-    d1: [
-      { planet: "Sun", signId: 9, signLabel: "धनु", house: null },
-      { planet: "Mars", signId: 9, signLabel: "धनु", house: null },
-      { planet: "Saturn", signId: 11, signLabel: "कुम्भ", house: null },
-      { planet: "Moon", signId: 10, signLabel: "मकर", house: null },
+    moonSignLabel: "मकर",
+    planets: [
+      { planet:"Sun", signLabel:"धनु", house:8, degree:null },
+      { planet:"Mars",signLabel:"धनु", house:8, degree:null },
+      { planet:"Saturn",signLabel:"कुम्भ", house:10, degree:null },
+      { planet:"Moon",signLabel:"मकर", house:9, degree:null },
     ],
     yogas: [{label:"गजकेसरी", factors:["Jupiter","Moon"]}],
     doshas: [{label:"मंगल दोष", factors:["Mars"]}],
-    lang: "ne"
-  };
-
-  // Use the normalization system
-  const { buildAstroPrompt } = require("@/lib/astro-prompt");
-  const { aiInput } = buildAstroPrompt(mockApiData);
-
-  return {
-    ascSignLabel: aiInput.ascSignLabel,
-    moonSignLabel: aiInput.planets.find(p => p.planet === "Moon")?.signLabel || "Unknown",
-    planets: aiInput.planets.map(p => ({
-      planet: p.planet,
-      signLabel: p.signLabel,
-      house: p.house,
-      degree: p.degree
-    })),
-    yogas: aiInput.yogas,
-    doshas: aiInput.doshas,
   };
 }
 
-export default async function KundaliPage() {
-  const data = await getData();
+export default function KundaliPage() {
+  const data = getData();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
