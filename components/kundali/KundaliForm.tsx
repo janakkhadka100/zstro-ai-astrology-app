@@ -70,6 +70,34 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [kundaliData, setKundaliData] = useState<KundaliResult | null>(null);
 
+  // Dev mock data fallback
+  if (process.env.NODE_ENV !== "production" && !kundaliData && !isLoading) {
+    const mockData = KundaliResultZ.parse({
+      ascSignId: 1,
+      ascSignLabel: "मेष",
+      d1: [
+        { planet: "Sun", signId: 5, signLabel: "सिंह", house: 5, retro: false },
+        { planet: "Moon", signId: 4, signLabel: "कर्क", house: 4, retro: false },
+        { planet: "Mars", signId: 1, signLabel: "मेष", house: 1, retro: false },
+        { planet: "Mercury", signId: 2, signLabel: "वृष", house: 2, retro: false },
+        { planet: "Jupiter", signId: 3, signLabel: "मिथुन", house: 3, retro: false },
+        { planet: "Venus", signId: 6, signLabel: "कन्या", house: 6, retro: false },
+        { planet: "Saturn", signId: 7, signLabel: "तुला", house: 7, retro: false },
+        { planet: "Rahu", signId: 8, signLabel: "वृश्चिक", house: 8, retro: false },
+        { planet: "Ketu", signId: 2, signLabel: "वृष", house: 2, retro: false }
+      ],
+      yogas: [
+        { key: "gajakesari", label: "गजकेसरी योग", factors: ["Jupiter", "Moon"] },
+        { key: "sunapha", label: "सुनाफा योग", factors: ["Sun", "Moon"] }
+      ],
+      doshas: [
+        { key: "mangal_dosha", label: "मंगल दोष", factors: ["Mars"] }
+      ],
+      lang: "ne"
+    });
+    setKundaliData(mockData);
+  }
+
   const handleInputChange = (field: keyof BirthDetails, value: string | number) => {
     setFormData(prev => ({
       ...prev,
