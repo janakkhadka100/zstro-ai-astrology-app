@@ -4,7 +4,9 @@ import type { AstroData, AstroAnalysisResponse } from "@/lib/astrology/types";
 import { AstroCardSkeleton, Skeleton } from "@/components/shared/Skeleton";
 import { ErrorNotice, LoadingWithError } from "@/components/shared/ErrorNotice";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { DownloadButtons } from "@/components/export/DownloadButtons";
 import { getString, type Lang } from "@/lib/utils/i18n";
+import { isFeatureEnabled } from "@/lib/config/features";
 
 interface AstroCardsProps {
   lang?: Lang;
@@ -368,6 +370,19 @@ export default function AstroCards({
                   {analysis.text || analysis.answer || analysis.analysis || "No analysis available"}
                 </pre>
               </div>
+              
+              {/* Export buttons */}
+              {isFeatureEnabled('export') && data && (
+                <div className="mt-4">
+                  <DownloadButtons
+                    lang={lang}
+                    analysis={analysis.text || analysis.answer || analysis.analysis || ""}
+                    cards={data}
+                    title={lang === "ne" ? "ज्योतिष विश्लेषण" : "Astrology Analysis"}
+                    className="mt-4"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
