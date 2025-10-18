@@ -43,6 +43,23 @@ export interface I18nStrings {
   lightMode: string;
   darkMode: string;
   toggleTheme: string;
+  
+  // Notifications
+  notifications: string;
+  notificationsNotSupported: string;
+  subscriptionSuccess: string;
+  subscriptionSuccessMessage: string;
+  subscriptionFailed: string;
+  subscriptionError: string;
+  unsubscribeError: string;
+  permissionDenied: string;
+  notificationStatus: string;
+  subscribed: string;
+  notSubscribed: string;
+  enableNotifications: string;
+  disableNotifications: string;
+  subscribeToNotifications: string;
+  notificationInfo: string;
 }
 
 export const strings: Record<Lang, I18nStrings> = {
@@ -79,7 +96,23 @@ export const strings: Record<Lang, I18nStrings> = {
     
     lightMode: "Light Mode",
     darkMode: "Dark Mode",
-    toggleTheme: "Toggle theme"
+    toggleTheme: "Toggle theme",
+    
+    notifications: "Notifications",
+    notificationsNotSupported: "Notifications are not supported in this browser.",
+    subscriptionSuccess: "Successfully Subscribed!",
+    subscriptionSuccessMessage: "You will now receive astrology notifications.",
+    subscriptionFailed: "Failed to subscribe to notifications.",
+    subscriptionError: "An error occurred while subscribing.",
+    unsubscribeError: "An error occurred while unsubscribing.",
+    permissionDenied: "Notification permission was denied.",
+    notificationStatus: "Notification Status",
+    subscribed: "Subscribed",
+    notSubscribed: "Not Subscribed",
+    enableNotifications: "Enable Notifications",
+    disableNotifications: "Disable Notifications",
+    subscribeToNotifications: "Subscribe to Notifications",
+    notificationInfo: "Get notified about new analysis results, messages, and important updates."
   },
   ne: {
     loading: "लोड हुँदै...",
@@ -114,7 +147,23 @@ export const strings: Record<Lang, I18nStrings> = {
     
     lightMode: "प्रकाश मोड",
     darkMode: "अँध्यारो मोड",
-    toggleTheme: "थीम बदल्नुहोस्"
+    toggleTheme: "थीम बदल्नुहोस्",
+    
+    notifications: "सूचनाहरू",
+    notificationsNotSupported: "यो ब्राउजरमा सूचनाहरू समर्थित छैन।",
+    subscriptionSuccess: "सफलतापूर्वक सदस्यता लिइएको!",
+    subscriptionSuccessMessage: "तपाईंले अब ज्योतिष सूचनाहरू प्राप्त गर्नुहुनेछ।",
+    subscriptionFailed: "सूचना सदस्यतामा असफल।",
+    subscriptionError: "सदस्यता लिँदै गर्दा त्रुटि भयो।",
+    unsubscribeError: "सदस्यता रद्द गर्दै गर्दा त्रुटि भयो।",
+    permissionDenied: "सूचना अनुमति अस्वीकार गरियो।",
+    notificationStatus: "सूचना स्थिति",
+    subscribed: "सदस्यता लिइएको",
+    notSubscribed: "सदस्यता लिइएको छैन",
+    enableNotifications: "सूचना सक्षम गर्नुहोस्",
+    disableNotifications: "सूचना अक्षम गर्नुहोस्",
+    subscribeToNotifications: "सूचनामा सदस्यता लिनुहोस्",
+    notificationInfo: "नयाँ विश्लेषण परिणाम, सन्देशहरू र महत्वपूर्ण अपडेटहरूको बारेमा सूचित हुनुहोस्।"
   }
 };
 
