@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, MapPin, User, Clock } from 'lucide-react';
+import { Loader2, MapPin, User, Clock, Star, Download, Share2 } from 'lucide-react';
 
 // Nepal districts data
 const NEPAL_DISTRICTS = [
@@ -138,6 +138,21 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 text-center">
+            <Loader2 className="w-16 h-16 animate-spin text-purple-600 mx-auto mb-4" />
+            <p className="text-xl font-semibold text-gray-800">
+              तपाईंको कुण्डली बनाउँदै...
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              कृपया प्रतीक्षा गर्नुहोस्
+            </p>
+          </div>
+        </div>
+      )}
+
       <Card className="border-0 shadow-xl bg-white/10 backdrop-blur-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-white mb-2">
@@ -255,50 +270,154 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
           {/* Kundali Results */}
           {kundaliData && (
-            <div className="mt-8 p-6 bg-white/10 rounded-lg border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">कुण्डली परिणाम</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-blue-300 mb-2">लग्न राशि</h4>
-                  <p className="text-white">{kundaliData.ascSignLabel}</p>
+            <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 space-y-6">
+              {/* Birth Details */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                  {formData.name} को कुण्डली
+                </h2>
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">जन्म मिति:</span>
+                    <p className="font-semibold">{formData.birthDate}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">जन्म समय:</span>
+                    <p className="font-semibold">{formData.birthTime}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">जन्म स्थान:</span>
+                    <p className="font-semibold">{formData.place}</p>
+                  </div>
                 </div>
-                
+              </div>
+
+              {/* Ascendant - Prominent Display */}
+              <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold mb-2">लग्न (Ascendant)</h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-4xl font-bold">{kundaliData.ascSignLabel}</p>
+                    <p className="text-purple-200 text-sm">Sign ID: {kundaliData.ascSignId}</p>
+                  </div>
+                  <Star className="w-16 h-16 text-purple-200" />
+                </div>
+              </div>
+
+              {/* Planets */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  ग्रहहरू (Planets)
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {kundaliData.d1?.map((planet: any, index: number) => (
+                    <div 
+                      key={index}
+                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-400 hover:shadow-md transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-bold text-gray-800">{planet.planet}</h4>
+                          <p className="text-sm text-gray-600">ग्रह</p>
+                        </div>
+                        {planet.retro && (
+                          <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">
+                            वक्री (R)
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">राशि:</span>
+                          <p className="font-semibold text-purple-700">{planet.signLabel}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">घर:</span>
+                          <p className="font-semibold text-blue-700">{planet.house}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Yogas - Benefic */}
+              {kundaliData.yogas && kundaliData.yogas.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-blue-300 mb-2">ग्रह स्थिति</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {kundaliData.d1?.map((planet: any, index: number) => (
-                      <div key={index} className="text-sm text-gray-300">
-                        <span className="font-medium">{planet.planet}:</span> {planet.signLabel} ({planet.house}औं घर)
+                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-green-500">✨</span>
+                    योगहरू (Auspicious Yogas)
+                  </h3>
+                  <div className="space-y-3">
+                    {kundaliData.yogas.map((yoga: any, index: number) => (
+                      <div 
+                        key={index}
+                        className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-green-900 mb-1">{yoga.label}</h4>
+                            <p className="text-sm text-gray-600">
+                              Factors: {yoga.factors.join(', ')}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Key: {yoga.key}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
 
-                {kundaliData.yogas?.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-green-300 mb-2">योग</h4>
-                    <div className="space-y-1">
-                      {kundaliData.yogas.map((yoga: any, index: number) => (
-                        <div key={index} className="text-sm text-gray-300">
-                          • {yoga.label}
+              {/* Doshas - Warning */}
+              {kundaliData.doshas && kundaliData.doshas.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-orange-500">⚠️</span>
+                    दोषहरू (Doshas)
+                  </h3>
+                  <div className="space-y-3">
+                    {kundaliData.doshas.map((dosha: any, index: number) => (
+                      <div 
+                        key={index}
+                        className="bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-500 rounded-lg p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                            ⚠
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-orange-900 mb-1">{dosha.label}</h4>
+                            <p className="text-sm text-gray-600">
+                              Affected by: {dosha.factors.join(', ')}
+                            </p>
+                            <p className="text-xs text-orange-700 mt-2">
+                              💡 उपाय को लागि ज्योतिषी संग परामर्श गर्नुहोस्
+                            </p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {kundaliData.doshas?.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-red-300 mb-2">दोष</h4>
-                    <div className="space-y-1">
-                      {kundaliData.doshas.map((dosha: any, index: number) => (
-                        <div key={index} className="text-sm text-gray-300">
-                          • {dosha.label}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              {/* Action Buttons */}
+              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2">
+                  <Download className="w-5 h-5" />
+                  PDF डाउनलोड गर्नुहोस्
+                </button>
+                <button className="bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition-all flex items-center justify-center gap-2">
+                  <Share2 className="w-5 h-5" />
+                  शेयर गर्नुहोस्
+                </button>
               </div>
             </div>
           )}
