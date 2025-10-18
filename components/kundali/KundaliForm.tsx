@@ -10,8 +10,10 @@ import { Loader2, MapPin, User, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { ResultSkeleton } from '../ResultSkeleton';
+import { DevStatus } from '../DevStatus';
 import { KundaliResultZ, type KundaliResult } from '@/lib/schemas/kundali';
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 
 const ChartView = dynamic(() => import('../ChartView'), { 
   ssr: false, 
@@ -69,6 +71,8 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kundaliData, setKundaliData] = useState<KundaliResult | null>(null);
+  const [activeTab, setActiveTab] = useState('chart');
+  const [lastApiMs, setLastApiMs] = useState<number | undefined>();
 
   // Dev mock data fallback
   if (process.env.NODE_ENV !== "production" && !kundaliData && !isLoading) {
@@ -143,6 +147,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
     setError(null);
 
     try {
+      const startTime = Date.now();
       const response = await fetch('/api/astrology/kundali', {
         method: 'POST',
         headers: {
@@ -168,6 +173,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
       const json = await response.json();
       const data = KundaliResultZ.parse(json);
       setKundaliData(data);
+      setLastApiMs(Date.now() - startTime);
       
       if (onKundaliGenerated) {
         onKundaliGenerated(data);
@@ -348,7 +354,7 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                 </div>
 
                 {/* Tabs */}
-                <Tabs defaultValue="chart" className="w-full">
+                <Tabs defaultValue="chart" className="w-full" onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="chart">Chart View</TabsTrigger>
                     <TabsTrigger value="planets">Planets</TabsTrigger>
@@ -357,7 +363,9 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
                   </TabsList>
                   
                   <TabsContent value="chart" className="mt-6">
-                    <ChartView data={kundaliData} />
+                    <Suspense fallback={<ResultSkeleton />}>
+                      <ChartView data={kundaliData} />
+                    </Suspense>
                   </TabsContent>
                   
                   <TabsContent value="planets" className="mt-6">
@@ -457,6 +465,13 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
           )}
         </div>
       </div>
+      
+      {/* Dev Status */}
+      <DevStatus 
+        dataLoaded={!!kundaliData} 
+        activeTab={activeTab} 
+        lastApiMs={lastApiMs} 
+      />
     </div>
   );
 }
