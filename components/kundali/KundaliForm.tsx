@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, MapPin, User, Clock, Star, Download, Share2 } from 'lucide-react';
 import NorthIndianChart from '../charts/NorthIndianChart';
+import { pdfService } from '@/lib/services/pdf-service';
 
 // Nepal districts data
 const NEPAL_DISTRICTS = [
@@ -132,6 +133,29 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'अज्ञात त्रुटि');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!kundaliData) return;
+
+    try {
+      setIsLoading(true);
+      await pdfService.generateKundaliPDF(
+        kundaliData,
+        {
+          name: formData.name,
+          birthDate: formData.birthDate,
+          birthTime: formData.birthTime,
+          place: formData.place,
+        },
+        'north-indian-chart'
+      );
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      setError('PDF download गर्न सकिएन');
     } finally {
       setIsLoading(false);
     }
@@ -306,13 +330,15 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
               </div>
 
               {/* North Indian Chart */}
-              <NorthIndianChart 
-                planets={kundaliData.d1 || []}
-                ascendant={{
-                  signId: kundaliData.ascSignId,
-                  signLabel: kundaliData.ascSignLabel
-                }}
-              />
+              <div id="north-indian-chart">
+                <NorthIndianChart 
+                  planets={kundaliData.d1 || []}
+                  ascendant={{
+                    signId: kundaliData.ascSignId,
+                    signLabel: kundaliData.ascSignLabel
+                  }}
+                />
+              </div>
 
               {/* Planets */}
               <div>
@@ -420,9 +446,13 @@ export default function KundaliForm({ onKundaliGenerated }: KundaliFormProps) {
 
               {/* Action Buttons */}
               <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2">
+                <button 
+                  onClick={handleDownloadPDF}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <Download className="w-5 h-5" />
-                  PDF डाउनलोड गर्नुहोस्
+                  {isLoading ? 'PDF बनाइरहेको...' : 'PDF डाउनलोड गर्नुहोस्'}
                 </button>
                 <button className="bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition-all flex items-center justify-center gap-2">
                   <Share2 className="w-5 h-5" />
