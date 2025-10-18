@@ -1,12 +1,5 @@
 {
   "version": 2,
-  "name": "zstro-ai-astrology",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
