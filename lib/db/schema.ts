@@ -1,215 +1,169 @@
-import type { InferSelectModel } from 'drizzle-orm';
-import {
-  pgTable,
-  varchar,
-  timestamp,
-  json,
-  uuid,
-  text,
-  primaryKey,
-  foreignKey,
-  boolean,
-  integer,
-} from 'drizzle-orm/pg-core';
+// lib/db/schema.ts
+// Database schema for history and user data
 
-export const user = pgTable('User', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  email: varchar('email', { length: 64 }).notNull(),
-  password: varchar('password', { length: 64 }),
-  resetToken: varchar('resetToken', { length: 255 }),
-  resetTokenExpiry: timestamp('resetTokenExpiry'),
-  name: varchar('name', { length: 64 }).notNull(),
-  gender: varchar('gender', { enum: ['male', 'female', 'other'] }).notNull(),
-  dob: varchar('dob', { length: 10 }).notNull(),
-  time: varchar('time', { length: 8 }).notNull(),
-  latitude: varchar('latitude', { length: 32 }).notNull(),
-  longitude: varchar('longitude', { length: 32 }).notNull(),
-  timezone: varchar('timezone', { length: 16 }).notNull(),
-  place: varchar('place', { length: 128 }).notNull(),
-  coins: integer('coins').notNull().default(0),
-  dailyMessageCount: integer('dailyMessageCount').notNull().default(0),
-  lastMessageAt: timestamp('lastMessageAt'),
-  isPremium: boolean('isPremium').notNull().default(false),
-  role: varchar("role", { length: 20 }).notNull().default("user"),
+import { sql } from 'drizzle-orm';
+import { pgTable, text, timestamp, jsonb, uuid, integer, boolean, index } from 'drizzle-orm/pg-core';
+
+// Users table
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  lastLoginAt: timestamp('last_login_at'),
+  isActive: boolean('is_active').default(true).notNull(),
 });
 
-export type User = InferSelectModel<typeof user>;
-
-export const chat = pgTable('Chat', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull(),
+// Sessions table for chat sessions
+export const sessions = pgTable('sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   title: text('title').notNull(),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => user.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+}, (table) => ({
+  userIdIdx: index('sessions_user_id_idx').on(table.userId),
+  createdAtIdx: index('sessions_created_at_idx').on(table.createdAt),
+}));
+
+// Messages table for chat messages
+export const messages = pgTable('messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'cascade' }).notNull(),
+  role: text('role').notNull(), // 'user' | 'assistant' | 'system'
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  metadata: jsonb('metadata'), // Additional message metadata
+}, (table) => ({
+  sessionIdIdx: index('messages_session_id_idx').on(table.sessionId),
+  createdAtIdx: index('messages_created_at_idx').on(table.createdAt),
+  roleIdx: index('messages_role_idx').on(table.role),
+}));
+
+// Snapshots table for astro data snapshots
+export const snapshots = pgTable('snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'cascade' }).notNull(),
+  messageId: uuid('message_id').references(() => messages.id, { onDelete: 'cascade' }),
+  cards: jsonb('cards').notNull(), // AstroData snapshot
+  analysis: text('analysis'), // LLM analysis text
+  provenance: jsonb('provenance'), // Data provenance info
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  sessionIdIdx: index('snapshots_session_id_idx').on(table.sessionId),
+  messageIdIdx: index('snapshots_message_id_idx').on(table.messageId),
+  createdAtIdx: index('snapshots_created_at_idx').on(table.createdAt),
+}));
+
+// User preferences table
+export const userPreferences = pgTable('user_preferences', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  language: text('language').default('ne').notNull(), // 'ne' | 'en'
+  theme: text('theme').default('system').notNull(), // 'light' | 'dark' | 'system'
+  notifications: jsonb('notifications').default({}).notNull(), // Notification preferences
+  astrologySettings: jsonb('astrology_settings').default({}).notNull(), // Astrology-specific settings
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export type Chat = InferSelectModel<typeof chat>;
+// Analysis history table for tracking analysis patterns
+export const analysisHistory = pgTable('analysis_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  question: text('question').notNull(),
+  questionHash: text('question_hash').notNull(), // For deduplication
+  language: text('language').notNull(),
+  analysis: text('analysis').notNull(),
+  cardsUsed: jsonb('cards_used').notNull(), // Which cards were used
+  dataNeeded: jsonb('data_needed'), // What additional data was fetched
+  responseTime: integer('response_time'), // Response time in ms
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('analysis_history_user_id_idx').on(table.userId),
+  questionHashIdx: index('analysis_history_question_hash_idx').on(table.questionHash),
+  createdAtIdx: index('analysis_history_created_at_idx').on(table.createdAt),
+}));
 
-export const message = pgTable('Message', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  chatId: uuid('chatId')
-    .notNull()
-    .references(() => chat.id),
-  role: varchar('role').notNull(),
-  content: json('content').notNull(),
-  createdAt: timestamp('createdAt').notNull(),
-});
+// Cache invalidation table for managing cache lifecycle
+export const cacheInvalidation = pgTable('cache_invalidation', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  cacheKey: text('cache_key').notNull().unique(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  invalidatedAt: timestamp('invalidated_at').defaultNow().notNull(),
+  reason: text('reason'), // Why it was invalidated
+}, (table) => ({
+  cacheKeyIdx: index('cache_invalidation_cache_key_idx').on(table.cacheKey),
+  userIdIdx: index('cache_invalidation_user_id_idx').on(table.userId),
+  invalidatedAtIdx: index('cache_invalidation_invalidated_at_idx').on(table.invalidatedAt),
+}));
 
-export type Message = InferSelectModel<typeof message>;
+// Export types for TypeScript
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 
-export const vote = pgTable(
-  'Vote',
-  {
-    chatId: uuid('chatId')
-      .notNull()
-      .references(() => chat.id),
-    messageId: uuid('messageId')
-      .notNull()
-      .references(() => message.id),
-    isUpvoted: boolean('isUpvoted').notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
-    };
-  },
-);
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
 
-export type Vote = InferSelectModel<typeof vote>;
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;
 
-export const document = pgTable(
-  'Document',
-  {
-    id: uuid('id').notNull().defaultRandom(),
-    createdAt: timestamp('createdAt').notNull(),
-    title: text('title').notNull(),
-    content: text('content'),
-    kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
-      .notNull()
-      .default('text'),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => user.id),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.id, table.createdAt] }),
-    };
-  },
-);
+export type Snapshot = typeof snapshots.$inferSelect;
+export type NewSnapshot = typeof snapshots.$inferInsert;
 
-export type Document = InferSelectModel<typeof document>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type NewUserPreferences = typeof userPreferences.$inferInsert;
 
-export const suggestion = pgTable(
-  'Suggestion',
-  {
-    id: uuid('id').notNull().defaultRandom(),
-    documentId: uuid('documentId').notNull(),
-    documentCreatedAt: timestamp('documentCreatedAt').notNull(),
-    originalText: text('originalText').notNull(),
-    suggestedText: text('suggestedText').notNull(),
-    description: text('description'),
-    isResolved: boolean('isResolved').notNull().default(false),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => user.id),
-    createdAt: timestamp('createdAt').notNull(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.id] }),
-    documentRef: foreignKey({
-      columns: [table.documentId, table.documentCreatedAt],
-      foreignColumns: [document.id, document.createdAt],
-    }),
-  }),
-);
+export type AnalysisHistory = typeof analysisHistory.$inferSelect;
+export type NewAnalysisHistory = typeof analysisHistory.$inferInsert;
 
-export type Suggestion = InferSelectModel<typeof suggestion>;
+export type CacheInvalidation = typeof cacheInvalidation.$inferSelect;
+export type NewCacheInvalidation = typeof cacheInvalidation.$inferInsert;
 
-export const astrologicalData = pgTable(
-  'AstrologicalData',
-  {
-    id: uuid('id').notNull().defaultRandom(),
-    type: text('type').notNull(),
-    content: json('content').notNull(),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => user.id),
-    createdAt: timestamp('createdAt').notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.id, table.createdAt] }),
-    };
-  },
-);
+// Extended types with relationships
+export interface SessionWithMessages extends Session {
+  messages: Message[];
+  snapshots: Snapshot[];
+}
 
-export type AstrologicalData = InferSelectModel<typeof astrologicalData>;
+export interface MessageWithSnapshot extends Message {
+  snapshot?: Snapshot;
+}
 
-export const district = pgTable(
-  'District',
-  {
-    id: uuid('id').notNull().defaultRandom(),
-    districtName: text('districtName').notNull(),
-    latitude: varchar('latitude', { length: 32 }).notNull(),
-    longitude: varchar('longitude', { length: 32 }).notNull(),
-    timeDifference: varchar('timeDifference', { length: 16 }).notNull(),
-    timezone: varchar('timezone', { length: 16 }).notNull(),
-    createdAt: timestamp('createdAt').notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.id] }),
-    };
-  },
-);
+export interface UserWithSessions extends User {
+  sessions: SessionWithMessages[];
+  preferences?: UserPreferences;
+}
 
-export type District = InferSelectModel<typeof district>;
-
-export const payment = pgTable(
-  'Payment',
-  {
-    id: uuid('id').notNull().defaultRandom(),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => user.id),
-    amount: integer('amount').notNull(),
-    method: varchar('method', { enum: ['khalti', 'esewa','connectips'] }).notNull(),
-    status: varchar('status', { enum: ['pending', 'completed', 'failed'] }).notNull().default('pending'),
-    transactionId: varchar('transactionId', { length: 64 }).notNull(),
-    transactionCode: varchar('transactionCode', { length: 64 }).notNull(),
-    createdAt: timestamp('createdAt').notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.id] }),
-    };
-  },
-);
-
-export type Payment = InferSelectModel<typeof payment>;
-
-export const subscription = pgTable(
-  "Subscription",
-  {
-    id: uuid("id").notNull().defaultRandom(),
-    userId: uuid("userId")
-      .notNull()
-      .references(() => user.id),
-    coins: integer("coins").notNull(),
-    status: varchar("status", { enum: ["active", "canceled", "expired"] }).notNull().default("active"),
-    createdAt: timestamp("createdAt").notNull(),
-    expiresAt: timestamp("expiresAt"),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.id] }),
-    };
-  },
-);
-
-export type Subscription = InferSelectModel<typeof subscription>;
+// Database indexes for performance
+export const indexes = {
+  // User indexes
+  users_email_idx: 'users_email_idx',
+  users_created_at_idx: 'users_created_at_idx',
+  
+  // Session indexes
+  sessions_user_id_idx: 'sessions_user_id_idx',
+  sessions_created_at_idx: 'sessions_created_at_idx',
+  
+  // Message indexes
+  messages_session_id_idx: 'messages_session_id_idx',
+  messages_created_at_idx: 'messages_created_at_idx',
+  messages_role_idx: 'messages_role_idx',
+  
+  // Snapshot indexes
+  snapshots_session_id_idx: 'snapshots_session_id_idx',
+  snapshots_message_id_idx: 'snapshots_message_id_idx',
+  snapshots_created_at_idx: 'snapshots_created_at_idx',
+  
+  // Analysis history indexes
+  analysis_history_user_id_idx: 'analysis_history_user_id_idx',
+  analysis_history_question_hash_idx: 'analysis_history_question_hash_idx',
+  analysis_history_created_at_idx: 'analysis_history_created_at_idx',
+  
+  // Cache invalidation indexes
+  cache_invalidation_cache_key_idx: 'cache_invalidation_cache_key_idx',
+  cache_invalidation_user_id_idx: 'cache_invalidation_user_id_idx',
+  cache_invalidation_invalidated_at_idx: 'cache_invalidation_invalidated_at_idx',
+} as const;
