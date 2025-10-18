@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BootstrapRequest, BootstrapResponse } from '@/lib/astrology/types';
 import { getAccountCard, mapAccountToAstroData , validateAccountCard } from '@/lib/source/account';
+import { composeAstroData } from '@/lib/cards/compose';
 import { cacheBootstrapData, getCachedBootstrapData } from '@/lib/perf/cache';
 import { isFeatureEnabled } from '@/lib/config/features';
 import { createSecurityMiddleware, SECURITY_CONFIGS, secureResponse } from '@/lib/security/middleware';
@@ -72,7 +73,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Map account to astro data
-    const astroData = mapAccountToAstroData(account, lang);
+    const baseAstroData = mapAccountToAstroData(account, lang);
+    
+    // Compose full astro data with derived analysis
+    const astroData = composeAstroData(baseAstroData, lang);
     
     // Cache the result if caching is enabled
     if (isFeatureEnabled('skeletons')) {

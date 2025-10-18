@@ -9,6 +9,7 @@ import { isCoinSufficient } from '@/lib/db/queries';
 import { HistoryList } from '@/components/history/HistoryList';
 import { isFeatureEnabled } from '@/lib/config/features';
 import { RealtimeProvider } from '@/components/realtime/RealtimeProvider';
+import AstroCards from '@/components/astro/AstroCards';
 
 export default async function Page() {
   const id = generateUUID();
@@ -31,6 +32,11 @@ export default async function Page() {
     return (
       <RealtimeProvider userId={userId || "test-user-123"} enabled={realtimeEnabled}>
         <div className="flex h-screen">
+          {/* Astro Cards Sidebar */}
+          <div className="w-96 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+            <AstroCards lang="ne" />
+          </div>
+          
           {/* Main Chat Area */}
           <div className="flex-1">
             <Chat

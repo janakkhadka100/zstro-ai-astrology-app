@@ -5,11 +5,13 @@ export type PlanetName =
   | "Sun" | "Moon" | "Mars" | "Mercury" | "Jupiter" | "Venus" | "Saturn"
   | "Rahu" | "Ketu";
 
+export type SignId = 1|2|3|4|5|6|7|8|9|10|11|12;
+
 export interface D1PlanetRow {
   planet: PlanetName;
-  signId: number;           // 1..12
+  signId: SignId;           // 1..12
   signLabel: string;        // Aries..Pisces (I18n later)
-  house: number;            // 1..12 (whole-sign)
+  house: 1|2|3|4|5|6|7|8|9|10|11|12;  // 1..12 (whole-sign)
   retro: boolean;
 }
 
@@ -23,6 +25,42 @@ export interface DivisionalPlanetRow {
 export interface DivisionalBlock {
   type: "D2" | "D7" | "D9" | "D10";
   planets: DivisionalPlanetRow[];
+}
+
+export interface HouseRow {
+  house: 1|2|3|4|5|6|7|8|9|10|11|12;
+  signId: SignId;               // sign in that house
+  signLabel: string;
+  lord: PlanetName;             // sign lord
+  occupants: PlanetName[];      // planets placed in this house
+  aspectsFrom: { planet: PlanetName; kind: "7"|"mars"|"jupiter"|"saturn"; }[]; // who aspects this house
+  aspectPower: number;          // simple score (sum of weights)
+}
+
+export interface RelationEdge {
+  a: PlanetName; 
+  b: PlanetName;
+  natural: "friend"|"neutral"|"enemy";
+  contextual?: "friend"|"neutral"|"enemy"; // from placement (optional)
+}
+
+export interface StrengthRow {
+  planet: PlanetName;
+  shadbala?: number;          // if available (0..something)
+  normalized?: number;        // 0..100 scale
+  dignity?: "exalt"|"own"|"mool"|"friend"|"neutral"|"enemy"|"debil";
+}
+
+export interface DerivedBundle {
+  houses: HouseRow[];
+  relations: RelationEdge[];
+  strengths: StrengthRow[];
+}
+
+export interface YogaExplained { 
+  key: string; 
+  label: string; 
+  why: string; 
 }
 
 export interface YogaItem { 
@@ -68,13 +106,15 @@ export interface AstroData {
     tz?: string;
     lat?: number;
     lon?: number;
+    pob?: string;  // Place of birth
   };
-  ascSignId: number;
+  ascSignId: SignId;
   ascSignLabel: string;
   d1: D1PlanetRow[];
+  derived: DerivedBundle;          // <<< new - house analysis, relations, strengths
   divisionals: DivisionalBlock[];
-  yogas: YogaItem[];
-  doshas: DoshaItem[];
+  yogas: (YogaExplained|YogaItem)[];
+  doshas: (YogaExplained|DoshaItem)[];
   shadbala: ShadbalaRow[];
   dashas: DashaItem[];
   lang?: "ne" | "en";

@@ -2,6 +2,8 @@
 // Deterministic yoga/rajyoga detectors based on D1 cards
 
 import { SignId, find, relHouse, signLabel, LORDS, houseOf, houseLordOf } from './util';
+import { YogaExplained, D1PlanetRow } from './types';
+import { getSignLabel, isKendra } from './tables';
 
 export interface YogaDetection {
   key: string;
@@ -11,7 +13,7 @@ export interface YogaDetection {
 }
 
 // 1) Gajakesari Yoga (Moon ↔ Jupiter kendra FROM MOON)
-export function detectGajakesari(d1: {planet: string, signId: number, house: number}[], lang: "ne" | "en" = "en"): YogaDetection | null {
+export function detectGajakesari(d1: D1PlanetRow[], lang: "ne" | "en" = "en"): YogaExplained | null {
   const M = find(d1, "Moon");
   const J = find(d1, "Jupiter");
   
@@ -45,7 +47,7 @@ function isOwnOrExalted_Saturn(sign: SignId): boolean {
   return [10, 11, 7].includes(sign); // Capricorn (own), Aquarius (own), Libra (exalted)
 }
 
-export function detectShasha(asc: SignId, d1: {planet: string, signId: number, house: number}[], lang: "ne" | "en" = "en"): YogaDetection | null {
+export function detectShasha(asc: SignId, d1: D1PlanetRow[], lang: "ne" | "en" = "en"): YogaExplained | null {
   const S = find(d1, "Saturn");
   if (!S) return null;
   
@@ -73,7 +75,7 @@ export function detectShasha(asc: SignId, d1: {planet: string, signId: number, h
 }
 
 // 3) Vipareeta Rajyoga (lord of 6/8/12 placed in 6/8/12)
-export function detectVipareetaRajyoga(asc: SignId, d1: {planet: string, signId: number, house: number}[], lang: "ne" | "en" = "en"): YogaDetection | null {
+export function detectVipareetaRajyoga(asc: SignId, d1: D1PlanetRow[], lang: "ne" | "en" = "en"): YogaExplained | null {
   const maleficHouses = [6, 8, 12];
   const out: any[] = [];
   
@@ -117,7 +119,7 @@ export function detectVipareetaRajyoga(asc: SignId, d1: {planet: string, signId:
 }
 
 // 4) Budha-Aditya Yoga (Mercury and Sun in same sign)
-export function detectBudhaAditya(d1: {planet: string, signId: number, house: number}[], lang: "ne" | "en" = "en"): YogaDetection | null {
+export function detectBudhaAditya(d1: D1PlanetRow[], lang: "ne" | "en" = "en"): YogaExplained | null {
   const M = find(d1, "Mercury");
   const S = find(d1, "Sun");
   
@@ -141,7 +143,7 @@ function isOwnOrExalted_Jupiter(sign: SignId): boolean {
   return [9, 5, 1].includes(sign); // Sagittarius (own), Leo (exalted), Aries (exalted)
 }
 
-export function detectHamsa(asc: SignId, d1: {planet: string, signId: number, house: number}[], lang: "ne" | "en" = "en"): YogaDetection | null {
+export function detectHamsa(asc: SignId, d1: D1PlanetRow[], lang: "ne" | "en" = "en"): YogaExplained | null {
   const J = find(d1, "Jupiter");
   if (!J) return null;
   
@@ -169,14 +171,14 @@ export function detectHamsa(asc: SignId, d1: {planet: string, signId: number, ho
 }
 
 // 6) Registry + Exported API
-export function detectAll(asc: SignId, d1: {planet: string, signId: number, house: number}[], lang: "ne" | "en" = "en"): YogaDetection[] {
+export function detectAll(asc: SignId, d1: D1PlanetRow[], lang: "ne" | "en" = "en"): YogaExplained[] {
   const items = [
     detectGajakesari(d1, lang),
     detectShasha(asc, d1, lang),
     detectVipareetaRajyoga(asc, d1, lang),
     detectBudhaAditya(d1, lang),
     detectHamsa(asc, d1, lang)
-  ].filter(Boolean) as YogaDetection[];
+  ].filter(Boolean) as YogaExplained[];
   
   return items;
 }

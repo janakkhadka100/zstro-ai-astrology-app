@@ -1,193 +1,192 @@
 // lib/llm/prompt-core.ts
-// Core prompts for cards-only astrology analysis
+// Core LLM prompting system for cards-only reasoning
 
 import { AstroData } from '@/lib/astrology/types';
-import { getSignLabel } from '@/lib/astrology/util';
+import { getHouseSignificance, isKendra, isKona, isTrik } from '@/lib/astrology/derive';
 
-export function getSystemPrompt(lang: "ne" | "en"): string {
-  if (lang === "ne") {
-    return `तपाईं एक विशेषज्ञ ज्योतिषी हुनुहुन्छ। तलका कार्डहरू Prokerala/Account बाट आएका "स्रोत सत्य" हुन्।
+export const systemPrompt = (lang: "ne" | "en") => lang === "ne"
+  ? `तलका कार्डहरू (D1, घर/मालिक/राशी, दृष्टि, सम्बन्ध, बल, दशा, योग/दोष) "स्रोत सत्य" हुन्। यिनै तथ्यबाट मात्र उत्तर देऊ। कुनै तथ्य कार्डमा नभए "DataNeeded: <scopes>" भनेर पहिलो लाइनमा लेख।
 
-महत्वपूर्ण नियमहरू:
-1. केवल प्रदान गरिएका कार्डहरू प्रयोग गर्नुहोस्
-2. कुनै पनि तथ्य नबदल्नुहोस्
-3. Transit डेटा नगुसाउनुहोस्
-4. कार्डमा नभएको कुरा चाहियो भने "DataNeeded: <keys>" भनेर मात्र सङ्केत गर्नुहोस्
-5. स्पष्ट र संरचित उत्तर दिनुहोस्
-6. मृत्यु भविष्यवाणी नगर्नुहोस्
-7. केवल ज्योतिषीय तथ्यहरूको आधारमा विश्लेषण गर्नुहोस्
+निर्देश:
+- प्रश्नसँग सम्बन्धित घर/मालिक/राशी/दृष्टि/बल/सम्बन्ध उद्धृत गर्दै step-by-step कारण देऊ
+- राजयोग/दोषको स्पष्ट "किन?" कारण बताऊ
+- कार्डबाहिर कुनै अनुमान नगर
+- केवल दिइएका तथ्यहरूबाट मात्र विश्लेषण गर`
+  : `Cards below are the only source of truth. Answer strictly from them. If something is missing, first line "DataNeeded: <scopes>".
 
-उदाहरण: यदि नवांश डेटा चाहियो भने "DataNeeded: divisionals.D9" लेख्नुहोस्।`;
-  } else {
-    return `You are an expert astrologer. The cards below are "source of truth" from Prokerala/Account.
+Instructions:
+- Quote relevant houses/lords/signs/aspects/strengths/relations step-by-step
+- Explain WHY for Rajyogas/Doshas clearly
+- No speculation beyond card facts
+- Analyze only from provided facts`;
 
-Critical Rules:
-1. Use ONLY the provided cards
-2. Do not modify any facts
-3. Do not inject transit data
-4. If data outside cards is needed, signal with "DataNeeded: <keys>" only
-5. Provide clear and structured analysis
-6. Do not predict death
-7. Base analysis only on astrological facts
+export function userPrompt(lang: "ne" | "en", data: AstroData, question: string): string {
+  const isNepali = lang === "ne";
+  
+  // D1 Planets
+  const d1 = data.d1.map(r => 
+    `${r.planet}|${r.signLabel}|H${r.house}${r.retro ? "|R" : ""}`
+  ).join("\n");
 
-Example: If Navamsa data is needed, write "DataNeeded: divisionals.D9".`;
-  }
+  // House Analysis
+  const houses = data.derived?.houses?.map(h => {
+    const significance = getHouseSignificance(h.house, lang);
+    const type = isKendra(h.house) ? (isNepali ? "केन्द्र" : "Kendra") :
+                 isKona(h.house) ? (isNepali ? "कोण" : "Kona") :
+                 isTrik(h.house) ? (isNepali ? "त्रिक" : "Trik") : "";
+    
+    return `H${h.house}:${h.signLabel} lord=${h.lord} occ=[${h.occupants.join(",") || "-"}] asp=[${h.aspectsFrom.map(a => a.planet).join(",") || "-"}] pow=${h.aspectPower.toFixed(1)} ${type} (${significance})`;
+  }).join("\n") || "";
+
+  // Planetary Strengths
+  const strengths = data.derived?.strengths?.map(s => 
+    `${s.planet}:${s.normalized || ""}/${s.dignity || ""}${s.shadbala ? ` (${s.shadbala.toFixed(1)})` : ""}`
+  ).join(", ") || "";
+
+  // Planetary Relations
+  const relations = data.derived?.relations?.map(r => 
+    `${r.a}↔${r.b}:${r.natural}${r.contextual ? `(${r.contextual})` : ""}`
+  ).join(", ") || "";
+
+  // Yogas with WHY
+  const yogas = (data.yogas || []).map((y: any) => 
+    y.why ? `${y.label} (किन: ${y.why})` : y.label
+  ).join("; ");
+
+  // Doshas with WHY
+  const doshas = (data.doshas || []).map((d: any) => 
+    d.why ? `${d.label} (किन: ${d.why})` : d.label
+  ).join("; ");
+
+  // Dashas (short)
+  const dashas = data.dashas?.slice(0, 6).map((d: any) => 
+    `${d.system || "Vimshottari"}|${d.level || "Maha"}|${d.planet}|${d.from}→${d.to}`
+  ).join("\n") || "";
+
+  const header = isNepali
+    ? `# D1 ग्रहहरू
+${d1}
+
+# घर/मालिक/दृष्टि
+${houses}
+
+# ग्रह बल
+${strengths}
+
+# ग्रह सम्बन्ध
+${relations}
+
+# योग/दोष
+${yogas}
+${doshas ? `\n${doshas}` : ""}
+
+# दशा (छोटो)
+${dashas}
+
+प्रश्न:
+${question}
+
+निर्देश: प्रश्नसँग सम्बन्धित घर/मालिक/राशी/दृष्टि/बल/सम्बन्ध उद्धृत गर्दै step-by-step कारण देऊ; कार्डबाहिर नजाऊ।`
+    : `# D1 Planets
+${d1}
+
+# House/Lord/Aspects
+${houses}
+
+# Planetary Strengths
+${strengths}
+
+# Planetary Relations
+${relations}
+
+# Yogas/Doshas
+${yogas}
+${doshas ? `\n${doshas}` : ""}
+
+# Dashas (short)
+${dashas}
+
+Question:
+${question}
+
+Instructions: Quote relevant houses/lords/signs/aspects/strengths/relations step-by-step; stay within cards.`;
+
+  return header;
 }
 
-export function buildUserPrompt(lang: "ne" | "en", cards: AstroData, question: string): string {
-  const sections: string[] = [];
+// Helper function to extract DataNeeded from LLM response
+export function extractDataNeeded(response: string): string[] | null {
+  const lines = response.split('\n');
+  const firstLine = lines[0]?.trim();
+  
+  if (firstLine?.startsWith('DataNeeded:')) {
+    const scopes = firstLine.replace('DataNeeded:', '').trim();
+    return scopes.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  
+  return null;
+}
 
-  // Profile section
-  if (cards.profile) {
-    const profile = cards.profile;
-    const profileData = [
-      profile.name && `Name: ${profile.name}`,
-      profile.birthDate && `Birth Date: ${profile.birthDate}`,
-      profile.birthTime && `Birth Time: ${profile.birthTime}`,
-      profile.tz && `Timezone: ${profile.tz}`,
-      profile.lat && profile.lon && `Coordinates: ${profile.lat}, ${profile.lon}`
-    ].filter(Boolean).join(", ");
+// Helper function to check if response contains DataNeeded
+export function hasDataNeeded(response: string): boolean {
+  return extractDataNeeded(response) !== null;
+}
 
-    if (profileData) {
-      sections.push(`Profile: {${profileData}}`);
+// Helper function to get house focus based on question
+export function getHouseFocus(question: string, lang: "ne" | "en" = "ne"): number[] {
+  const q = question.toLowerCase();
+  const isNepali = lang === "ne";
+  
+  const houseKeywords = {
+    1: isNepali ? ['आत्मा', 'शरीर', 'व्यक्तित्व', 'लग्न'] : ['self', 'body', 'personality', 'lagna'],
+    2: isNepali ? ['धन', 'परिवार', 'वाणी', 'द्वितीय'] : ['wealth', 'family', 'speech', 'second'],
+    3: isNepali ? ['भाइबहिनी', 'साहस', 'संचार', 'तृतीय'] : ['siblings', 'courage', 'communication', 'third'],
+    4: isNepali ? ['आमा', 'घर', 'शिक्षा', 'चतुर्थ'] : ['mother', 'home', 'education', 'fourth'],
+    5: isNepali ? ['सन्तान', 'बुद्धि', 'रचनात्मकता', 'पञ्चम'] : ['children', 'intelligence', 'creativity', 'fifth'],
+    6: isNepali ? ['रोग', 'शत्रु', 'सेवा', 'षष्ठ'] : ['diseases', 'enemies', 'service', 'sixth'],
+    7: isNepali ? ['विवाह', 'जीवनसाथी', 'साझेदारी', 'सप्तम'] : ['marriage', 'spouse', 'partnership', 'seventh'],
+    8: isNepali ? ['आयु', 'परिवर्तन', 'गुप्त', 'अष्टम'] : ['longevity', 'transformation', 'occult', 'eighth'],
+    9: isNepali ? ['भाग्य', 'बुबा', 'उच्च शिक्षा', 'नवम'] : ['fortune', 'father', 'higher learning', 'ninth'],
+    10: isNepali ? ['कर्म', 'प्रतिष्ठा', 'अधिकार', 'दशम'] : ['career', 'reputation', 'authority', 'tenth'],
+    11: isNepali ? ['लाभ', 'मित्र', 'जेठो भाइ', 'एकादश'] : ['gains', 'friends', 'elder siblings', 'eleventh'],
+    12: isNepali ? ['हानि', 'खर्च', 'विदेश', 'द्वादश'] : ['losses', 'expenses', 'foreign lands', 'twelfth']
+  };
+  
+  const focusedHouses: number[] = [];
+  
+  for (const [house, keywords] of Object.entries(houseKeywords)) {
+    if (keywords.some(keyword => q.includes(keyword))) {
+      focusedHouses.push(parseInt(house));
     }
   }
-
-  // D1 Planets section
-  if (cards.d1.length > 0) {
-    const d1Rows = cards.d1.map(planet => 
-      `${planet.planet}|${planet.signLabel}|H${planet.house}${planet.retro ? "|R" : ""}`
-    ).join("\n");
-    sections.push(`D1:\n${d1Rows}`);
-  }
-
-  // Divisionals section
-  if (cards.divisionals.length > 0) {
-    const divisionalRows = cards.divisionals.map(div => {
-      const planets = div.planets.map(p => `${p.planet}|${p.signLabel}|H${p.house}`).join(" ");
-      return `${div.type}: ${planets}`;
-    }).join("\n");
-    sections.push(`Divisionals:\n${divisionalRows}`);
-  }
-
-  // Yogas and Doshas section
-  const yogas = cards.yogas.map(y => y.label).join(", ");
-  const doshas = cards.doshas.map(d => d.label).join(", ");
-  if (yogas || doshas) {
-    sections.push(`Yogas/Doshas: Yogas: ${yogas || "-"}, Doshas: ${doshas || "-"}`);
-  }
-
-  // Shadbala section
-  if (cards.shadbala.length > 0) {
-    const shadbalaRows = cards.shadbala.map(s => 
-      `${s.planet}:${s.value}${s.unit ? s.unit : ""}`
-    ).join(", ");
-    sections.push(`Shadbala: ${shadbalaRows}`);
-  }
-
-  // Dashas section
-  if (cards.dashas.length > 0) {
-    const dashaRows = cards.dashas.map(d => 
-      `${d.system}|${d.level}|${d.planet}|${d.from}→${d.to}`
-    ).join("\n");
-    sections.push(`Dashas:\n${dashaRows}`);
-  }
-
-  // Provenance section (for debugging)
-  if (cards.provenance) {
-    const accountData = cards.provenance.account.join(", ");
-    const prokeralaData = cards.provenance.prokerala.join(", ");
-    sections.push(`Provenance: Account[${accountData}], Prokerala[${prokeralaData}]`);
-  }
-
-  const cardsText = sections.join("\n\n");
   
-  if (lang === "ne") {
-    return `# कार्डहरू\n${cardsText}\n\nप्रश्न:\n${question}\n\nनिर्देश: माथिका कार्डहरूमा नआएका कुरामा अनुमान नगर्नुहोस्। कार्डबाहिर चाहियो भने "DataNeeded: <keys>" लेख्नुहोस्।`;
-  } else {
-    return `# Cards\n${cardsText}\n\nQuestion:\n${question}\n\nInstruction: Do not speculate beyond the cards. If data outside cards is needed, write "DataNeeded: <keys>".`;
-  }
+  return focusedHouses;
 }
 
-export function buildCombinedPrompt(lang: "ne" | "en", cards: AstroData, question: string): {
-  system: string;
-  user: string;
-  combined: string;
-} {
-  const system = getSystemPrompt(lang);
-  const user = buildUserPrompt(lang, cards, question);
-  const combined = `[[SYSTEM]]\n${system}\n\n[[USER]]\n${user}`;
-
-  return { system, user, combined };
-}
-
-export function extractDataNeededFromResponse(response: string): string[] {
-  // Look for "DataNeeded: key1,key2" pattern
-  const match = response.match(/^DataNeeded:\s*(.+)$/m);
-  if (!match) return [];
-
-  return match[1].split(',').map(key => key.trim()).filter(key => key.length > 0);
-}
-
-export function isDataNeededResponse(response: string): boolean {
-  return /^DataNeeded:\s*.+$/m.test(response);
-}
-
-export function createDataNeededResponse(keys: string[]): string {
-  return `DataNeeded: ${keys.join(", ")}`;
-}
-
-export function formatCardsForDisplay(cards: AstroData, lang: "ne" | "en"): {
-  summary: string;
-  details: string;
-} {
-  const summary = lang === "ne" 
-    ? `कार्डहरू: D1(${cards.d1.length}), विभाजन(${cards.divisionals.length}), योग(${cards.yogas.length}), दोष(${cards.doshas.length}), शड्बल(${cards.shadbala.length}), दशा(${cards.dashas.length})`
-    : `Cards: D1(${cards.d1.length}), Divisionals(${cards.divisionals.length}), Yogas(${cards.yogas.length}), Doshas(${cards.doshas.length}), Shadbala(${cards.shadbala.length}), Dashas(${cards.dashas.length})`;
-
-  const details = buildUserPrompt(lang, cards, "");
+// Helper function to get planet focus based on question
+export function getPlanetFocus(question: string, lang: "ne" | "en" = "ne"): string[] {
+  const q = question.toLowerCase();
+  const isNepali = lang === "ne";
   
-  return { summary, details };
-}
-
-export function validateCardsForAnalysis(cards: AstroData): {
-  valid: boolean;
-  warnings: string[];
-  missing: string[];
-} {
-  const warnings: string[] = [];
-  const missing: string[] = [];
-
-  // Check for basic required data
-  if (cards.d1.length === 0) {
-    missing.push("d1");
-    warnings.push("No D1 planets available");
-  }
-
-  if (cards.ascSignId < 1 || cards.ascSignId > 12) {
-    warnings.push("Invalid ascendant sign");
-  }
-
-  // Check for optional but useful data
-  if (cards.divisionals.length === 0) {
-    missing.push("divisionals");
-  }
-
-  if (cards.yogas.length === 0) {
-    missing.push("yogas");
-  }
-
-  if (cards.shadbala.length === 0) {
-    missing.push("shadbala");
-  }
-
-  if (cards.dashas.length === 0) {
-    missing.push("dashas");
-  }
-
-  return {
-    valid: missing.length === 0 || cards.d1.length > 0,
-    warnings,
-    missing
+  const planetKeywords = {
+    'Sun': isNepali ? ['सूर्य', 'रवि', 'आत्मा'] : ['sun', 'surya', 'soul'],
+    'Moon': isNepali ? ['चन्द्रमा', 'चन्द्र', 'मन'] : ['moon', 'chandra', 'mind'],
+    'Mars': isNepali ? ['मंगल', 'भौम', 'ऊर्जा'] : ['mars', 'mangal', 'energy'],
+    'Mercury': isNepali ? ['बुध', 'बुद्धि'] : ['mercury', 'budh', 'intelligence'],
+    'Jupiter': isNepali ? ['बृहस्पति', 'गुरु', 'ज्ञान'] : ['jupiter', 'guru', 'knowledge'],
+    'Venus': isNepali ? ['शुक्र', 'सुख', 'प्रेम'] : ['venus', 'shukra', 'love'],
+    'Saturn': isNepali ? ['शनि', 'कर्म', 'अनुशासन'] : ['saturn', 'shani', 'discipline'],
+    'Rahu': isNepali ? ['राहु', 'इच्छा'] : ['rahu', 'desire'],
+    'Ketu': isNepali ? ['केतु', 'मोक्ष'] : ['ketu', 'moksha']
   };
+  
+  const focusedPlanets: string[] = [];
+  
+  for (const [planet, keywords] of Object.entries(planetKeywords)) {
+    if (keywords.some(keyword => q.includes(keyword))) {
+      focusedPlanets.push(planet);
+    }
+  }
+  
+  return focusedPlanets;
 }

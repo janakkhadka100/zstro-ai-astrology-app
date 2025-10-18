@@ -82,3 +82,14 @@ export function formatPlanetRow(planet: { planet: string; signId: number; house:
   
   return `${planet.planet} in ${sign} (${houseText})`;
 }
+
+export function dedupByKey<T extends { key: string }>(arr: T[]): T[] {
+  const seen = new Set<string>();
+  return arr.filter(item => {
+    if (seen.has(item.key)) {
+      return false;
+    }
+    seen.add(item.key);
+    return true;
+  });
+}
