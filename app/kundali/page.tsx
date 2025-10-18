@@ -26,7 +26,7 @@ async function getData() {
   };
 
   // Use the normalization system
-  const { buildAstroPrompt } = await import("@/lib/astro-prompt");
+  const { buildAstroPrompt } = require("@/lib/astro-prompt");
   const { aiInput } = buildAstroPrompt(mockApiData);
 
   return {
