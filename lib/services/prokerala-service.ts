@@ -248,6 +248,12 @@ class ProkeralaService {
 
   // Get birth chart data
   async getKundali(birthDetails: BirthDetails): Promise<AstroData> {
+    // Mock data mode check
+    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+      console.log('Using mock data for development');
+      return this.getMockKundali(birthDetails);
+    }
+
     const cacheKey = this.getCacheKey(birthDetails);
     
     // Check cache first
