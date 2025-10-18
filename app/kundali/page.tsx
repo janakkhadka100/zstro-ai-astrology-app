@@ -1,27 +1,58 @@
+import dynamic from "next/dynamic";
+import ProfileCard from "@/components/ProfileCard";
+import ResultSummaryCard from "@/components/ResultSummaryCard";
+import PlanetTableCard from "@/components/PlanetTableCard";
+import YogDoshGrid from "@/components/YogDoshGrid";
+import PDFButtonCard from "@/components/PDFButtonCard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import KundaliForm from '@/components/kundali/KundaliForm';
-import ProfileCard from '@/components/ProfileCard';
-import { ProfileQuickInfo } from '@/components/ProfileQuickInfo';
 
-export default function KundaliPage() {
+const ChartView = dynamic(()=>import("@/components/ChartView"), { ssr:false, loading: () => <div className="h-56 bg-muted rounded-2xl" /> });
+
+// Mock data to avoid blank UI - replace with real data
+async function getData() {
+  return {
+    ascSignLabel: "वृष",
+    moonSignLabel: "मकर",
+    planets: [
+      { planet:"Sun", signLabel:"धनु", house:8, degree:null },
+      { planet:"Mars",signLabel:"धनु", house:8, degree:null },
+      { planet:"Saturn",signLabel:"कुम्भ", house:10, degree:null },
+    ],
+    yogas: [{label:"गजकेसरी", factors:["Jupiter","Moon"]}],
+    doshas: [{label:"मंगल दोष", factors:["Mars"]}],
+  };
+}
+
+export default async function KundaliPage() {
+  const data = await getData();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Top strip shows user quick info */}
-        <div className="mb-6">
-          <ProfileQuickInfo />
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+        {/* Top quick summary cards */}
+        <ResultSummaryCard asc={data.ascSignLabel} moon={data.moonSignLabel} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-          {/* Left: Profile & actions */}
+        <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
+          {/* Left column */}
           <div className="space-y-4">
             <ProfileCard />
-            {/* You can add quick actions, e.g., "Use profile details to prefill form" */}
+            <PDFButtonCard />
           </div>
 
-          {/* Right: Kundali Form */}
-          <div className="space-y-4">
-            <KundaliForm />
-          </div>
+          {/* Right column: Results */}
+          <ErrorBoundary>
+            <div className="space-y-4">
+              <div id="kundali-chart" className="h-56 rounded-2xl border bg-background p-3">
+                <ChartView />
+              </div>
+              <PlanetTableCard rows={data.planets} />
+              <YogDoshGrid yogas={data.yogas} doshas={data.doshas} />
+              
+              {/* Kundali Form */}
+              <KundaliForm />
+            </div>
+          </ErrorBoundary>
         </div>
       </div>
     </div>
