@@ -1,19 +1,13 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
-type Lang = "en" | "hi" | "ne";
+export type Lang = "en"|"hi"|"ne";
 
-const LangContext = createContext({
-  lang: "en" as Lang,
-  setLang: (lang: Lang) => {}
-});
+const Ctx = createContext<{lang:Lang; setLang:(v:Lang)=>void}>({lang:"en", setLang:()=>{}});
 
-export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>("en");
-  
-  const value = { lang, setLang };
-  
-  return React.createElement(LangContext.Provider, { value }, children);
+export function LangProvider({children}:{children:ReactNode}){ 
+  const [lang,setLang]=useState<Lang>("en"); 
+  return <Ctx.Provider value={{lang,setLang}}>{children}</Ctx.Provider>; 
 }
 
-export const useLang = () => useContext(LangContext);
+export const useLang = ()=>useContext(Ctx);
