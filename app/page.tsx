@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Star, Sun, Moon, Users, Download, Sparkles } from 'lucide-react';
+import { Star, Sun, Moon, Users, Download, Sparkles, Layout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -33,6 +33,13 @@ const features = [
     description: 'Download beautiful PDF reports of your astrological analysis',
     href: '/kundali',
     color: 'from-blue-500 to-indigo-500'
+  },
+  {
+    icon: Layout,
+    title: 'All Cards View',
+    description: 'Comprehensive dashboard with all astrology cards and analysis',
+    href: '/cards',
+    color: 'from-emerald-500 to-teal-500'
   }
 ];
 
@@ -64,6 +71,12 @@ export default function HomePage() {
                 <Link href="/daily-horoscope">
                   <Sun className="w-5 h-5 mr-2" />
                   Daily Horoscope
+                </Link>
+              </Button>
+              <Button asChild size="lg" className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+                <Link href="/cards">
+                  <Layout className="w-5 h-5 mr-2" />
+                  View All Cards
                 </Link>
               </Button>
             </div>
