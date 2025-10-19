@@ -78,7 +78,7 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
         }
         
         pdf.setFontSize(10);
-        const planetText = `${planet.planet}: ${planet.signLabel} (House ${planet.safeHouse})`;
+        let planetText = `${planet.planet}: ${planet.signLabel} (House ${planet.safeHouse})`;
         if (planet.degree !== null) {
           planetText += ` - ${planet.degree.toFixed(2)}°`;
         }
