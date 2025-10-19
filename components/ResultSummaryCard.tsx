@@ -1,11 +1,11 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { useLang } from "@/hooks/useLang"; 
-import { t } from "@/utils/strings";
+import { strings } from "@/utils/strings";
 
 export default function ResultSummaryCard({asc,moon,loading}:{asc?:string;moon?:string;loading?:boolean}){
   const {lang}=useLang(); 
-  const s=t[lang];
+  const s=strings[lang];
   if(loading) return <Card className="rounded-2xl h-24 bg-gradient-to-r from-indigo-100 to-sky-100 animate-pulse"/>;
   return (
     <Card className="rounded-2xl shadow-md bg-gradient-to-r from-indigo-200 via-sky-200 to-pink-200">

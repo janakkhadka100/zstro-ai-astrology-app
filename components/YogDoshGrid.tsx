@@ -1,11 +1,11 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { useLang } from "@/hooks/useLang"; 
-import { t } from "@/utils/strings";
+import { strings } from "@/utils/strings";
 
 export default function YogDoshGrid({yogas,doshas}:{yogas:{label:string;factors:string[]}[]; doshas:{label:string;factors:string[]}[]}) {
   const {lang}=useLang(); 
-  const s=t[lang];
+  const s=strings[lang];
   return (
     <div className="grid gap-4">
       <Card className="rounded-2xl shadow-md bg-gradient-to-tr from-emerald-100 via-green-100 to-lime-100">

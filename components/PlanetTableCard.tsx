@@ -1,11 +1,11 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { useLang } from "@/hooks/useLang"; 
-import { t } from "@/utils/strings";
+import { strings } from "@/utils/strings";
 
 export default function PlanetTableCard({rows}:{rows:{planet:string;signLabel:string;house:number}[]}) {
   const {lang}=useLang(); 
-  const s=t[lang];
+  const s=strings[lang];
   return (
     <Card className="rounded-2xl shadow-md bg-gradient-to-br from-rose-100 via-amber-100 to-orange-100">
       <CardHeader className="text-center font-semibold text-rose-700">{s.planets}</CardHeader>

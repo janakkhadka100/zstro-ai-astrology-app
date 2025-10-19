@@ -5,11 +5,11 @@ import ResultSummaryCard from "@/components/ResultSummaryCard";
 import PlanetTableCard from "@/components/PlanetTableCard";
 import YogDoshGrid from "@/components/YogDoshGrid";
 import { useLang } from "@/hooks/useLang"; 
-import { t } from "@/utils/strings";
+import { strings } from "@/utils/strings";
 
 export default function ClientView(){
   const { lang } = useLang(); 
-  const s=t[lang];
+  const s=strings[lang];
   const [messages,setMessages]=useState<{role:"user"|"ai"; text:string}[]>([]);
   const listRef = useRef<HTMLDivElement|null>(null);
 
