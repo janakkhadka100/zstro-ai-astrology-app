@@ -174,7 +174,15 @@ export default function ChatPage() {
             <ProfileCard data={mockAstroData} />
 
             {/* PDF Export */}
-            <PDFButtonCard data={mockAstroData} />
+            <PDFButtonCard 
+              data={mockAstroData} 
+              uploadedFiles={files.map(f => ({
+                name: f.name,
+                type: f.type,
+                text: f.text,
+                meta: f.meta
+              }))}
+            />
           </div>
 
           {/* Right Column - Chat & Astro Data */}

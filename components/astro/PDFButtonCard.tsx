@@ -9,9 +9,15 @@ import { toast } from "sonner";
 interface PDFButtonCardProps {
   data: any; // Pipeline data
   chartId?: string; // Optional chart element ID
+  uploadedFiles?: Array<{
+    name: string;
+    type: string;
+    text?: string;
+    meta?: any;
+  }>; // Uploaded files to include in PDF
 }
 
-export function PDFButtonCard({ data, chartId = 'kundali-chart' }: PDFButtonCardProps) {
+export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles = [] }: PDFButtonCardProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generatePDF = async () => {
@@ -110,6 +116,55 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart' }: PDFButtonCard
         pdf.text(`  Naisargika: ${planet.shadbala.naisargika.toFixed(2)}`, 25, yPosition);
         yPosition += 10;
       });
+
+      // Add uploaded files summary if any
+      if (uploadedFiles.length > 0) {
+        // Check if we need a new page
+        if (yPosition > 250) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+
+        pdf.setFontSize(16);
+        pdf.text("Uploaded Files Summary", 20, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        uploadedFiles.forEach((file, index) => {
+          // Check if we need a new page
+          if (yPosition > 270) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+
+          pdf.setFontSize(12);
+          pdf.text(`${index + 1}. ${file.name} (${file.type.split('/')[1].toUpperCase()})`, 20, yPosition);
+          yPosition += 6;
+
+          if (file.text) {
+            pdf.setFontSize(10);
+            const textPreview = file.text.slice(0, 200);
+            const lines = pdf.splitTextToSize(textPreview, 170);
+            lines.forEach((line: string) => {
+              if (yPosition > 270) {
+                pdf.addPage();
+                yPosition = 20;
+              }
+              pdf.text(line, 25, yPosition);
+              yPosition += 4;
+            });
+            if (file.text.length > 200) {
+              pdf.text("...", 25, yPosition);
+              yPosition += 4;
+            }
+          } else {
+            pdf.setFontSize(10);
+            pdf.text("(No text content extracted)", 25, yPosition);
+            yPosition += 4;
+          }
+          yPosition += 8;
+        });
+      }
 
       // Generate filename
       const today = new Date();
