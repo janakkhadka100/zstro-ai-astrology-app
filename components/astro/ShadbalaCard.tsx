@@ -50,33 +50,33 @@ export default function ShadbalaCard({ data, loading }: {
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium text-emerald-900">{planet}</span>
               <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStrengthColor(shadbala.total)}`}>
-                {shadbala.total.toFixed(0)} - {getStrengthLabel(shadbala.total)}
+                {(shadbala.total || 0).toFixed(0)} - {getStrengthLabel(shadbala.total || 0)}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="text-center">
                 <div className="text-emerald-600 font-medium">{t.sthana}</div>
-                <div className="text-emerald-800">{shadbala.sthana.toFixed(0)}</div>
+                <div className="text-emerald-800">{(shadbala.sthana || 0).toFixed(0)}</div>
               </div>
               <div className="text-center">
                 <div className="text-emerald-600 font-medium">{t.dig}</div>
-                <div className="text-emerald-800">{shadbala.dig.toFixed(0)}</div>
+                <div className="text-emerald-800">{(shadbala.dig || 0).toFixed(0)}</div>
               </div>
               <div className="text-center">
                 <div className="text-emerald-600 font-medium">{t.kala}</div>
-                <div className="text-emerald-800">{shadbala.kala.toFixed(0)}</div>
+                <div className="text-emerald-800">{(shadbala.kala || 0).toFixed(0)}</div>
               </div>
               <div className="text-center">
                 <div className="text-emerald-600 font-medium">{t.chesta}</div>
-                <div className="text-emerald-800">{shadbala.chesta.toFixed(0)}</div>
+                <div className="text-emerald-800">{(shadbala.chesta || 0).toFixed(0)}</div>
               </div>
               <div className="text-center">
                 <div className="text-emerald-600 font-medium">{t.naisargika}</div>
-                <div className="text-emerald-800">{shadbala.naisargika.toFixed(0)}</div>
+                <div className="text-emerald-800">{(shadbala.naisargika || 0).toFixed(0)}</div>
               </div>
               <div className="text-center">
                 <div className="text-emerald-600 font-medium">{t.drik}</div>
-                <div className="text-emerald-800">{shadbala.drik.toFixed(0)}</div>
+                <div className="text-emerald-800">{(shadbala.drik || 0).toFixed(0)}</div>
               </div>
             </div>
           </div>
