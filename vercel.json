@@ -8,12 +8,10 @@
       "maxDuration": 30
     },
     "app/api/upload/route.ts": {
-      "maxDuration": 30,
-      "runtime": "nodejs"
+      "maxDuration": 30
     },
     "app/api/extract/route.ts": {
-      "maxDuration": 30,
-      "runtime": "nodejs"
+      "maxDuration": 30
     }
   },
   "headers": [
