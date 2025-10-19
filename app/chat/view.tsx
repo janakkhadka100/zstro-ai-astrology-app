@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { getAstroPayload } from "./actions";
 import { AstroPayload } from "@/lib/astro-contract";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 import BirthCard from "@/components/cards/BirthCard";
 import OverviewCard from "@/components/cards/OverviewCard";
 import PlanetsCard from "@/components/cards/PlanetsCard";
@@ -21,6 +23,8 @@ export default function ChatView() {
   const [messages, setMessages] = useState<{role: "user"|"ai"; text: string}[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<{name: string; type: string}[]>([]);
   const unlockRef = useRef<HTMLDivElement | null>(null);
+  const { lang } = useLang();
+  const s = strings[lang];
 
   useEffect(() => {
     (async () => {
