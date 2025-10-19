@@ -2,12 +2,10 @@
 import { useState } from "react";
 import UploadBox from "@/components/UploadBox";
 import FileCards from "@/components/FileCards";
-import { ProfileCard } from "@/components/astro/ProfileCard";
-import { ResultSummaryCard } from "@/components/astro/ResultSummaryCard";
-import { PlanetTableCard } from "@/components/astro/PlanetTableCard";
-import { ShadbalaTableCard } from "@/components/astro/ShadbalaTableCard";
-import { DashaAccordion } from "@/components/astro/DashaAccordion";
-import { PDFButtonCard } from "@/components/astro/PDFButtonCard";
+import ResultSummaryCard from "@/components/astro/ResultSummaryCard";
+import PlanetTableCard from "@/components/astro/PlanetTableCard";
+import YogDoshGrid from "@/components/astro/YogDoshGrid";
+import PDFButtonCard from "@/components/astro/PDFButtonCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLang } from "@/hooks/useLang";
 import { getString } from "@/utils/strings";
@@ -56,22 +54,19 @@ export default function ClientChatView() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 space-y-6">
-      <ResultSummaryCard asc={data.ascSignLabel} moon={data.moonSignLabel} loading={false} />
       <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
         <div className="space-y-4">
-          <ProfileCard data={data} />
           <UploadBox onUploaded={(it)=>setItems(prev=>[it, ...prev])} />
-          <PDFButtonCard data={data} uploadedFiles={items} />
-                      <textarea id="chat-composer" className="w-full h-24 rounded-xl border p-2 text-sm" placeholder={getString("composer", lang)}/>
+          <PDFButtonCard onClick={()=>alert("PDF generation coming soon!")} />
+          <textarea id="chat-composer" className="w-full h-24 rounded-xl border p-2 text-sm" placeholder={getString("composer", lang)}/>
         </div>
 
         <ErrorBoundary>
           <div className="space-y-4">
+            <ResultSummaryCard asc={data.ascSignLabel} moon={data.moonSignLabel} />
             <FileCards items={items} onSendToChat={append} />
             <PlanetTableCard rows={data.planets}/>
-            <ShadbalaTableCard rows={data.planets}/>
-            <DashaAccordion tree={[]} title="विम्शोत्तरी दशा" lang="ne" />
-            <DashaAccordion tree={[]} title="योगिनी दशा" lang="ne" />
+            <YogDoshGrid yogas={data.yogas} doshas={data.doshas}/>
           </div>
         </ErrorBoundary>
       </div>

@@ -1,11 +1,9 @@
 "use client";
 
-import { ResultSummaryCard } from './ResultSummaryCard';
-import { ProfileCard } from './ProfileCard';
-import { PDFButtonCard } from './PDFButtonCard';
-import { PlanetTableCard } from './PlanetTableCard';
-import { ShadbalaTableCard } from './ShadbalaTableCard';
-import { DashaAccordion } from './DashaAccordion';
+import ResultSummaryCard from './ResultSummaryCard';
+import PDFButtonCard from './PDFButtonCard';
+import PlanetTableCard from './PlanetTableCard';
+import YogDoshGrid from './YogDoshGrid';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Empty data test
@@ -31,7 +29,6 @@ export default function EmptyDataTest() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="lg:col-span-1 space-y-6">
-            <ProfileCard data={emptyData} />
             <PDFButtonCard data={emptyData} />
           </div>
 
@@ -49,21 +46,7 @@ export default function EmptyDataTest() {
               <PlanetTableCard rows={emptyData.planets} />
 
               {/* Shadbala Table */}
-              <ShadbalaTableCard rows={emptyData.planets} />
-
-              {/* Vimshottari Dasha */}
-              <DashaAccordion 
-                tree={emptyData.vimshottariTree} 
-                title="विम्शोत्तरी दशा" 
-                lang={emptyData.lang}
-              />
-
-              {/* Yogini Dasha */}
-              <DashaAccordion 
-                tree={emptyData.yoginiTree} 
-                title="योगिनी दशा" 
-                lang={emptyData.lang}
-              />
+              <YogDoshGrid yogas={[]} doshas={[]} />
             </ErrorBoundary>
           </div>
         </div>

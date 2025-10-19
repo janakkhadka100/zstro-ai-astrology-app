@@ -1,10 +1,8 @@
 import { Suspense } from 'react';
-import { ResultSummaryCard } from '@/components/astro/ResultSummaryCard';
-import { ProfileCard } from '@/components/astro/ProfileCard';
-import { PDFButtonCard } from '@/components/astro/PDFButtonCard';
-import { PlanetTableCard } from '@/components/astro/PlanetTableCard';
-import { ShadbalaTableCard } from '@/components/astro/ShadbalaTableCard';
-import { DashaAccordion } from '@/components/astro/DashaAccordion';
+import ResultSummaryCard from '@/components/astro/ResultSummaryCard';
+import PDFButtonCard from '@/components/astro/PDFButtonCard';
+import PlanetTableCard from '@/components/astro/PlanetTableCard';
+import YogDoshGrid from '@/components/astro/YogDoshGrid';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ChartView } from '@/components/astro/ChartView';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -133,7 +131,6 @@ export default function KundaliTestPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="lg:col-span-1 space-y-6">
-              <ProfileCard data={emptyPipelineData} />
               <PDFButtonCard data={emptyPipelineData} chartId="kundali-chart-empty" />
             </div>
 
@@ -156,21 +153,7 @@ export default function KundaliTestPage() {
                 <PlanetTableCard rows={getPlanetRows(emptyPipelineData)} />
 
                 {/* Shadbala Table */}
-                <ShadbalaTableCard rows={emptyPipelineData.planets} />
-
-                {/* Vimshottari Dasha */}
-                <DashaAccordion 
-                  tree={emptyPipelineData.vimshottariTree} 
-                  title="विम्शोत्तरी दशा" 
-                  lang={emptyPipelineData.lang}
-                />
-
-                {/* Yogini Dasha */}
-                <DashaAccordion 
-                  tree={emptyPipelineData.yoginiTree} 
-                  title="योगिनी दशा" 
-                  lang={emptyPipelineData.lang}
-                />
+                <YogDoshGrid yogas={[]} doshas={[]} />
               </ErrorBoundary>
             </div>
           </div>
@@ -195,7 +178,6 @@ export default function KundaliTestPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="lg:col-span-1 space-y-6">
-              <ProfileCard data={samplePipelineData} />
               <PDFButtonCard data={samplePipelineData} chartId="kundali-chart-sample" />
             </div>
 
@@ -218,21 +200,7 @@ export default function KundaliTestPage() {
                 <PlanetTableCard rows={getPlanetRows(samplePipelineData)} />
 
                 {/* Shadbala Table */}
-                <ShadbalaTableCard rows={samplePipelineData.planets} />
-
-                {/* Vimshottari Dasha */}
-                <DashaAccordion 
-                  tree={samplePipelineData.vimshottariTree} 
-                  title="विम्शोत्तरी दशा" 
-                  lang={samplePipelineData.lang}
-                />
-
-                {/* Yogini Dasha */}
-                <DashaAccordion 
-                  tree={samplePipelineData.yoginiTree} 
-                  title="योगिनी दशा" 
-                  lang={samplePipelineData.lang}
-                />
+                <YogDoshGrid yogas={[]} doshas={[]} />
               </ErrorBoundary>
             </div>
           </div>

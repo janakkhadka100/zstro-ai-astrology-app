@@ -7,6 +7,7 @@ import { Sun, Moon, Star, Menu, X, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { useLang } from '@/hooks/useLang';
+import LangSwitcher from '@/components/LangSwitcher';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Star },
@@ -70,16 +71,10 @@ export default function Header() {
 
           {/* Right side controls */}
           <div className="flex items-center space-x-4">
-            {/* Language Toggle */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleLanguage}
-              className="hidden sm:flex items-center space-x-1"
-            >
-              <Globe className="w-4 h-4" />
-              <span>{lang === 'en' ? 'English' : lang === 'hi' ? 'हिन्दी' : 'नेपाली'}</span>
-            </Button>
+            {/* Language Switcher */}
+            <div className="hidden sm:flex">
+              <LangSwitcher />
+            </div>
 
             {/* Theme Toggle */}
             <Button

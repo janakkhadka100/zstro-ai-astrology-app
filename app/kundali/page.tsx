@@ -1,10 +1,8 @@
 import { Suspense } from 'react';
-import { ResultSummaryCard } from '@/components/astro/ResultSummaryCard';
-import { ProfileCard } from '@/components/astro/ProfileCard';
-import { PDFButtonCard } from '@/components/astro/PDFButtonCard';
-import { PlanetTableCard } from '@/components/astro/PlanetTableCard';
-import { ShadbalaTableCard } from '@/components/astro/ShadbalaTableCard';
-import { DashaAccordion } from '@/components/astro/DashaAccordion';
+import ResultSummaryCard from '@/components/astro/ResultSummaryCard';
+import PDFButtonCard from '@/components/astro/PDFButtonCard';
+import PlanetTableCard from '@/components/astro/PlanetTableCard';
+import YogDoshGrid from '@/components/astro/YogDoshGrid';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ChartView } from '@/components/astro/ChartView';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -209,7 +207,6 @@ export default function KundaliPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="lg:col-span-1 space-y-6">
-            <ProfileCard data={mockPipelineData} />
             <PDFButtonCard data={mockPipelineData} />
           </div>
 
@@ -232,21 +229,7 @@ export default function KundaliPage() {
               <PlanetTableCard rows={getPlanetRows(mockPipelineData)} />
 
               {/* Shadbala Table */}
-              <ShadbalaTableCard rows={mockPipelineData.planets} />
-
-              {/* Vimshottari Dasha */}
-              <DashaAccordion 
-                tree={mockPipelineData.vimshottariTree} 
-                title="विम्शोत्तरी दशा" 
-                lang={mockPipelineData.lang}
-              />
-
-              {/* Yogini Dasha */}
-              <DashaAccordion 
-                tree={mockPipelineData.yoginiTree} 
-                title="योगिनी दशा" 
-                lang={mockPipelineData.lang}
-              />
+              <YogDoshGrid yogas={[]} doshas={[]} />
             </ErrorBoundary>
           </div>
         </div>

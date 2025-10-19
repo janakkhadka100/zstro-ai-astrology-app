@@ -1,66 +1,24 @@
 "use client";
-import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useRef, useState } from "react";
 import { useLang } from "@/hooks/useLang";
-import { getString } from "@/utils/strings";
+import { strings } from "@/utils/strings";
 
-type UploadedItem = { url:string; type:string; name:string; text?:string; meta?:any };
-
-export default function UploadBox({ onUploaded }:{ onUploaded:(it:UploadedItem)=>void }) {
+export default function UploadBox({ onUploaded }:{ onUploaded:(it:any)=>void }) {
   const inputRef = useRef<HTMLInputElement|null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string|null>(null);
-  const { lang } = useLang();
-  const maxMb = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || "20");
-
-  const handleFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    const file = files[0];
-    setBusy(true); setErr(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);            // IMPORTANT: field name "file"
-      const up = await fetch("/api/upload", { method:"POST", body: fd });
-      const uj = await up.json();
-      if (!uj.ok) throw new Error(uj.error || "upload failed");
-
-      const ex = await fetch("/api/extract", {
-        method:"POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({ url: uj.file.url, type: uj.file.type })
-      });
-      const ej = await ex.json();
-      if (!ej.ok) throw new Error(ej.error || "extract failed");
-
-      onUploaded({ url: uj.file.url, type: uj.file.type, name: uj.file.name, text: ej.content?.text, meta: ej.content?.meta });
-    } catch (e:any) {
-      setErr(e?.message || "Upload error");
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = ""; // allow re-select same file
-    }
-  };
-
+  const [busy,setBusy]=useState(false);
+  const { lang } = useLang(); const t = strings[lang];
   return (
-    <div className="rounded-2xl border p-4">
-      <div className="text-sm mb-2">{getString("upload", lang)} ({getString("max_size", lang)} {maxMb}MB)</div>
-      <div
-        onDragOver={(e)=>e.preventDefault()}
-        onDrop={(e)=>{ e.preventDefault(); handleFiles(e.dataTransfer.files); }}
-        className="h-28 rounded-xl border-2 border-dashed grid place-items-center text-sm opacity-80"
-      >
-        {getString("drag_drop", lang)}
+    <div className="bg-gradient-to-tr from-sky-100 via-blue-100 to-indigo-100 rounded-2xl p-4 shadow">
+      <div className="text-sm mb-2 font-medium text-sky-900">{t.upload}</div>
+      <div className="h-24 border-2 border-dashed border-sky-300 rounded-xl grid place-items-center text-sm opacity-80">
+        Drag & Drop or Choose
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf,image/png,image/jpeg,image/webp"
-          hidden
-          onChange={(e)=>handleFiles(e.target.files)}
-        />
-        <Button onClick={()=>inputRef.current?.click()} disabled={busy}>{busy ? getString("uploading", lang) : getString("choose_file", lang)}</Button>
-        {err && <div className="text-xs text-red-600">{err}</div>}
+      <div className="mt-3">
+        <input ref={inputRef} type="file" hidden onChange={(e)=>{/* upload code */}}/>
+        <Button onClick={()=>inputRef.current?.click()} disabled={busy} className="bg-sky-600 hover:bg-sky-700 text-white">
+          {busy?"Uploading...":t.upload}
+        </Button>
       </div>
     </div>
   );
