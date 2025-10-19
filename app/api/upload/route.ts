@@ -4,11 +4,28 @@ import { put } from "@vercel/blob";
 
 export async function POST(req: Request) {
   try {
+    // Check content type
+    const contentType = req.headers.get("content-type");
+    if (!contentType?.includes("multipart/form-data")) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: "Invalid content type. Expected multipart/form-data" 
+      }, { status: 400 });
+    }
+
     const form = await req.formData();
     const file = form.get("file") as File | null;
     
     if (!file) {
       return NextResponse.json({ ok: false, error: "No file provided" }, { status: 400 });
+    }
+
+    // Validate file has content
+    if (file.size === 0) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: "File is empty" 
+      }, { status: 400 });
     }
 
     // Validate file size
@@ -37,8 +54,13 @@ export async function POST(req: Request) {
       }, { status: 415 });
     }
 
-    // Sanitize filename
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    // Sanitize filename and prevent directory traversal
+    const sanitizedName = file.name
+      .replace(/[^a-zA-Z0-9.-]/g, '_')
+      .replace(/\.\./g, '_') // Prevent directory traversal
+      .replace(/^\.+/, '') // Remove leading dots
+      .substring(0, 100); // Limit length
+    
     const timestamp = Date.now();
     const filename = `uploads/${timestamp}-${sanitizedName}`;
 
