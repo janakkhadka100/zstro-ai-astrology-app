@@ -1,101 +1,80 @@
-// app/api/extract/route.ts
-// Evidence extraction endpoint
+export const runtime = "nodejs";
+import { NextResponse } from "next/server";
+import pdfParse from "pdf-parse";
+import sharp from "sharp";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { ExtractRequest, ExtractResponse, EvidenceBundle, Lang } from '@/lib/extract/types';
-import { extractFromImage } from '@/lib/extract/image';
-import { extractFromPdf } from '@/lib/extract/pdf';
-
-export const runtime = 'nodejs'; // Required for file processing
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json() as ExtractRequest;
-    const { files, lang } = body;
+    const { url, type } = await req.json();
     
-    // Validate request
-    if (!files || files.length === 0) {
-      return NextResponse.json(
-        { success: false, errors: ['No files provided'] },
-        { status: 400 }
-      );
+    if (!url || !type) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: "Missing url or type in request body" 
+      }, { status: 400 });
     }
-    
-    if (!['ne', 'en'].includes(lang)) {
-      return NextResponse.json(
-        { success: false, errors: ['Invalid language. Must be "ne" or "en"'] },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`Extracting evidence from ${files.length} files in ${lang}`);
-    
-    const cards = [];
-    const errors: string[] = [];
-    
-    // Process each file
-    for (const file of files) {
-      try {
-        let card;
-        
-        if (file.kind === 'image') {
-          card = await extractFromImage(file, lang as Lang);
-        } else if (file.kind === 'pdf') {
-          card = await extractFromPdf(file, lang as Lang);
-        } else {
-          errors.push(`Unsupported file type: ${file.kind}`);
-          continue;
-        }
-        
-        cards.push(card);
-        console.log(`Extracted evidence from ${file.name}: ${card.type}`);
-        
-      } catch (error) {
-        console.error(`Error extracting from ${file.name}:`, error);
-        errors.push(`${file.name}: Extraction failed`);
-      }
-    }
-    
-    // Create evidence bundle
-    const bundle: EvidenceBundle = {
-      files,
-      cards,
-      lang: lang as Lang,
-      extractedAt: new Date().toISOString()
-    };
-    
-    // Return response
-    const response: ExtractResponse = {
-      success: cards.length > 0,
-      bundle,
-      errors: errors.length > 0 ? errors : undefined
-    };
-    
-    return NextResponse.json(response, { 
-      status: cards.length > 0 ? 200 : 400 
-    });
-    
-  } catch (error) {
-    console.error('Extract API error:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        errors: ['Internal server error'] 
-      },
-      { status: 500 }
-    );
-  }
-}
 
-// Handle OPTIONS for CORS
-export async function OPTIONS(req: NextRequest) {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+    // Download file from Blob
+    const response = await fetch(url);
+    if (!response.ok) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: "Failed to fetch file from storage" 
+      }, { status: 502 });
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    if (type === "application/pdf") {
+      // Extract text from PDF
+      const data = await pdfParse(buffer);
+      const text = (data.text || "").trim();
+      
+      return NextResponse.json({
+        ok: true,
+        content: {
+          kind: "pdf",
+          text,
+          meta: {
+            pages: data.numpages,
+            info: data.info
+          },
+          url
+        }
+      });
+
+    } else if (["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(type)) {
+      // Extract metadata from image
+      const metadata = await sharp(buffer).metadata();
+      
+      return NextResponse.json({
+        ok: true,
+        content: {
+          kind: "image",
+          text: "(image uploaded — OCR not enabled)",
+          meta: {
+            width: metadata.width,
+            height: metadata.height,
+            format: metadata.format,
+            size: metadata.size,
+            density: metadata.density
+          },
+          url
+        }
+      });
+
+    } else {
+      return NextResponse.json({ 
+        ok: false, 
+        error: "Unsupported file type for extraction" 
+      }, { status: 415 });
+    }
+
+  } catch (error: any) {
+    console.error("Extraction error:", error);
+    return NextResponse.json({ 
+      ok: false, 
+      error: error?.message || "Content extraction failed" 
+    }, { status: 500 });
+  }
 }
