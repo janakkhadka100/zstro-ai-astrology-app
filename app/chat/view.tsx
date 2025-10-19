@@ -97,7 +97,7 @@ export default function ChatView() {
         {/* Chat Messages */}
         {messages.length > 0 && (
           <div className="space-y-4 mt-8">
-            <h3 className="text-lg font-semibold text-gray-800">Chat History</h3>
+            <h3 className="text-lg font-semibold text-gray-800">{s.chat_history}</h3>
             {messages.map((message, index) => (
               <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
@@ -115,7 +115,7 @@ export default function ChatView() {
         {/* Attached Files Display */}
         {attachedFiles.length > 0 && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700 font-medium">Attached Files:</p>
+            <p className="text-sm text-blue-700 font-medium">{s.attached_files}:</p>
             <div className="flex flex-wrap gap-2 mt-2">
               {attachedFiles.map((file, index) => (
                 <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
@@ -132,7 +132,7 @@ export default function ChatView() {
         <div className="mx-auto max-w-3xl w-full flex items-center justify-between px-4 py-2">
           <SaveMenu targetSelector="main" />
           <div className="text-xs opacity-70">
-            {stage === "ready" ? "Chat enabled" : "Read the cards to continue…"}
+            {stage === "ready" ? s.chat_enabled : s.read_cards_to_continue}
           </div>
         </div>
         <ChatComposer 

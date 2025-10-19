@@ -1,16 +1,21 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { PlanetRow } from "@/lib/astro-contract";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 
 interface PlanetsCardProps {
   rows: PlanetRow[];
 }
 
 export default function PlanetsCard({ rows }: PlanetsCardProps) {
+  const { lang } = useLang();
+  const s = strings[lang];
+
   return (
     <Card id="card-planets" className="rounded-2xl shadow-md bg-gradient-to-br from-rose-100 via-amber-100 to-orange-100">
       <CardHeader className="text-center font-semibold text-rose-700">
-        Planetary Positions
+        {s.planetary_positions}
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -18,7 +23,7 @@ export default function PlanetsCard({ rows }: PlanetsCardProps) {
             <tr>
               <th className="p-2 text-left">Planet</th>
               <th className="p-2 text-left">Sign</th>
-              <th className="p-2 text-left">House</th>
+              <th className="p-2 text-left">{s.house}</th>
               <th className="p-2 text-left">Degree</th>
             </tr>
           </thead>
@@ -32,7 +37,7 @@ export default function PlanetsCard({ rows }: PlanetsCardProps) {
               </tr>
             )) : (
               <tr>
-                <td colSpan={4} className="p-3 text-center opacity-60">No planetary data available</td>
+                <td colSpan={4} className="p-3 text-center opacity-60">{s.no_data}</td>
               </tr>
             )}
           </tbody>
