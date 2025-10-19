@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 import { NextResponse } from "next/server";
-import pdfParse from "pdf-parse";
+import * as pdfParse from "pdf-parse";
 import sharp from "sharp";
 
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     if (type === "application/pdf") {
       // Extract text from PDF
-      const data = await pdfParse(buffer);
+      const data = await pdfParse.default(buffer);
       const text = (data.text || "").trim();
       
       return NextResponse.json({
