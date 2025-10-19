@@ -1,6 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/hooks/useLang";
+import { getString } from "@/utils/strings";
 
 type UploadedItem = { url:string; type:string; name:string; text?:string; meta?:any };
 
@@ -8,6 +10,7 @@ export default function UploadBox({ onUploaded }:{ onUploaded:(it:UploadedItem)=
   const inputRef = useRef<HTMLInputElement|null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string|null>(null);
+  const { lang } = useLang();
   const maxMb = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || "20");
 
   const handleFiles = async (files: FileList | null) => {
@@ -40,13 +43,13 @@ export default function UploadBox({ onUploaded }:{ onUploaded:(it:UploadedItem)=
 
   return (
     <div className="rounded-2xl border p-4">
-      <div className="text-sm mb-2">Upload PDF/Image (max {maxMb}MB)</div>
+      <div className="text-sm mb-2">{getString("upload", lang)} ({getString("max_size", lang)} {maxMb}MB)</div>
       <div
         onDragOver={(e)=>e.preventDefault()}
         onDrop={(e)=>{ e.preventDefault(); handleFiles(e.dataTransfer.files); }}
         className="h-28 rounded-xl border-2 border-dashed grid place-items-center text-sm opacity-80"
       >
-        Drag & drop here
+        {getString("drag_drop", lang)}
       </div>
       <div className="mt-3 flex items-center gap-2">
         <input
@@ -56,7 +59,7 @@ export default function UploadBox({ onUploaded }:{ onUploaded:(it:UploadedItem)=
           hidden
           onChange={(e)=>handleFiles(e.target.files)}
         />
-        <Button onClick={()=>inputRef.current?.click()} disabled={busy}>{busy ? "Uploading…" : "Choose File"}</Button>
+        <Button onClick={()=>inputRef.current?.click()} disabled={busy}>{busy ? getString("uploading", lang) : getString("choose_file", lang)}</Button>
         {err && <div className="text-xs text-red-600">{err}</div>}
       </div>
     </div>

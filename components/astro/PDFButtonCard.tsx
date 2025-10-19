@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLang } from "@/hooks/useLang";
+import { getString } from "@/utils/strings";
 
 interface PDFButtonCardProps {
   data: any; // Pipeline data
@@ -19,6 +21,7 @@ interface PDFButtonCardProps {
 
 export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles = [] }: PDFButtonCardProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const { lang } = useLang();
 
   const generatePDF = async () => {
     try {
@@ -27,7 +30,7 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
       // Check if chart element exists
       const chartElement = document.getElementById(chartId);
       if (!chartElement) {
-        toast.error("Chart not ready. Please wait for the chart to load.");
+        toast.error(getString("chart_not_ready", lang));
         return;
       }
 
@@ -57,8 +60,8 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
       pdf.text('जन्मकुण्डली / Kundali Report', 20, 20);
       
       pdf.setFontSize(12);
-      pdf.text(`Ascendant: ${data.ascSignLabel}`, 20, 30);
-      pdf.text(`Moon: ${data.planets.find((p: any) => p.planet === "Moon")?.signLabel || "Unknown"}`, 20, 35);
+      pdf.text(`${getString("asc", lang)}: ${data.ascSignLabel}`, 20, 30);
+      pdf.text(`${getString("moon", lang)}: ${data.planets.find((p: any) => p.planet === "Moon")?.signLabel || "Unknown"}`, 20, 35);
 
       // Add chart image
       const imgWidth = pageWidth - 40;
@@ -68,7 +71,7 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
       // Page 2: Planet Table
       pdf.addPage();
       pdf.setFontSize(16);
-      pdf.text('Planet Positions', 20, 20);
+      pdf.text(getString("planetary_positions", lang), 20, 20);
       
       let yPosition = 35;
       data.planets.forEach((planet: any, index: number) => {
@@ -174,11 +177,11 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
       // Save PDF
       pdf.save(fileName);
       
-      toast.success("PDF generated successfully!");
+      toast.success(getString("pdf_generated", lang));
       
     } catch (error) {
       console.error('PDF generation failed:', error);
-      toast.error("Failed to generate PDF. Please try again.");
+      toast.error(getString("pdf_error", lang));
     } finally {
       setIsGenerating(false);
     }
@@ -189,13 +192,14 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
           <FileText className="h-5 w-5" />
-          <span>Export Report</span>
+          <span>{getString("export_report", lang)}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Download a complete PDF report with chart, planetary positions, and analysis.
+            {getString("complete_pdf_report", lang)}
+            {uploadedFiles.length > 0 && ` ${getString("if_files_uploaded", lang)}`}
           </p>
           
           <Button 
@@ -207,12 +211,12 @@ export function PDFButtonCard({ data, chartId = 'kundali-chart', uploadedFiles =
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating PDF...
+                {getString("generating_pdf", lang)}
               </>
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                {getString("download_kundali", lang)}
               </>
             )}
           </Button>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 import { ThemeProvider } from '@/components/theme-provider';
+import { LangProvider } from '@/hooks/useLang';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -118,14 +119,16 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-              <Toaster position="top-center" />
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <LangProvider>
+            <div className="min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-1">
+                <Toaster position="top-center" />
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </LangProvider>
         </ThemeProvider>
       </body>
     </html>

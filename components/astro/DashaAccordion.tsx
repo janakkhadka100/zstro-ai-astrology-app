@@ -1,205 +1,175 @@
 "use client";
-
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Calendar, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useLang } from "@/hooks/useLang";
+import { getString } from "@/utils/strings";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronDown, ChevronRight, Calendar, Clock, Crown, Star } from "lucide-react";
+import { useState } from "react";
 
 interface DashaBlock {
   name: string;
   lord: string;
-  start: string;  // ISO UTC
-  end: string;    // ISO UTC
+  start: string;
+  end: string;
   level: string;
   children?: DashaBlock[];
 }
 
 interface DashaAccordionProps {
-  tree: DashaBlock[];
-  title: string;
-  lang: "ne" | "en";
+  tree?: DashaBlock[];
+  title?: string;
+  loading?: boolean;
+  lang?: "en" | "hi" | "ne";
 }
 
-export function DashaAccordion({ tree, title, lang }: DashaAccordionProps) {
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+const levelColors: Record<string, string> = {
+  MAHA: "from-purple-500 to-indigo-600",
+  ANTAR: "from-blue-500 to-cyan-600", 
+  PRATYANTAR: "from-green-500 to-emerald-600",
+  SUKSHMA: "from-yellow-500 to-orange-600",
+  PRANA: "from-red-500 to-pink-600",
+  YOGINI: "from-pink-500 to-rose-600"
+};
 
-  const toggleExpanded = (itemId: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId);
-    } else {
-      newExpanded.add(itemId);
-    }
-    setExpandedItems(newExpanded);
-  };
+const levelIcons: Record<string, any> = {
+  MAHA: Crown,
+  ANTAR: Star,
+  PRATYANTAR: Star,
+  SUKSHMA: Star,
+  PRANA: Star,
+  YOGINI: Star
+};
 
-  const formatDate = (isoString: string): string => {
+function DashaItem({ block, level = 0, lang }: { block: DashaBlock; level?: number; lang: "en" | "hi" | "ne" }) {
+  const [isExpanded, setIsExpanded] = useState(level < 2); // Auto-expand first 2 levels
+  
+  const formatDate = (dateStr: string) => {
     try {
-      const date = new Date(isoString);
-      if (isNaN(date.getTime())) {
-        return "—"; // Invalid date
-      }
-      return isNepali 
-        ? date.toLocaleDateString('ne-NP', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            timeZone: 'Asia/Kathmandu'
-          })
-        : date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            timeZone: 'Asia/Kathmandu'
-          });
-    } catch {
-      return "—"; // Invalid date
-    }
-  };
-
-  const formatDuration = (start: string, end: string): string => {
-    try {
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return "—";
-      }
-      
-      const diffMs = endDate.getTime() - startDate.getTime();
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      
-      if (diffDays < 30) {
-        return `${diffDays} ${isNepali ? 'दिन' : 'days'}`;
-      } else if (diffDays < 365) {
-        const months = Math.floor(diffDays / 30);
-        return `${months} ${isNepali ? 'महिना' : 'months'}`;
-      } else {
-        const years = Math.floor(diffDays / 365);
-        const remainingMonths = Math.floor((diffDays % 365) / 30);
-        return `${years}${isNepali ? ' वर्ष' : 'y'} ${remainingMonths > 0 ? remainingMonths + (isNepali ? 'म' : 'm') : ''}`;
-      }
+      const date = new Date(dateStr);
+      return date.toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'ne' ? 'ne-NP' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
     } catch {
       return "—";
     }
   };
 
-  const isNepali = lang === "ne";
+  const hasChildren = block.children && block.children.length > 0;
+  const colorClass = levelColors[block.level] || "from-gray-500 to-slate-600";
+  const IconComponent = levelIcons[block.level] || Star;
 
-  const renderDashaItem = (dasha: DashaBlock, level: number = 0, parentId: string = ""): React.ReactNode => {
-    const itemId = `${parentId}-${dasha.name}-${dasha.start}`;
-    const isExpanded = expandedItems.has(itemId);
-    const hasChildren = dasha.children && dasha.children.length > 0;
-    const indentClass = `ml-${Math.min(level * 4, 16)}`;
-
-    return (
-      <div key={itemId} className={`${indentClass} border-l-2 border-gray-200 dark:border-gray-700 pl-4 py-2`}>
+  return (
+    <div className="border-l-2 border-gray-200 dark:border-gray-700 ml-4">
+      <div 
+        className={`p-3 rounded-lg bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 cursor-pointer ${level > 0 ? 'ml-4' : ''}`}
+        onClick={() => hasChildren && setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2">
-              {hasChildren && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleExpanded(itemId)}
-                  className="h-6 w-6 p-0"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-              <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {dasha.name}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  ({dasha.lord})
-                </span>
-                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                  {dasha.level}
-                </span>
+          <div className="flex items-center space-x-3">
+            {hasChildren && (
+              <div className="text-gray-400">
+                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </div>
-            </div>
-            
-            <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-3 w-3" />
-                <span>{formatDate(dasha.start)}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Clock className="h-3 w-3" />
-                <span>{formatDuration(dasha.start, dasha.end)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {hasChildren && isExpanded && (
-          <div className="mt-2 space-y-1">
-            {dasha.children!.map((child, index) => 
-              renderDashaItem(child, level + 1, itemId)
             )}
+            <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
+              <IconComponent className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {block.name} ({block.lord})
+              </p>
+              <div className="flex items-center space-x-2 mt-1">
+                <div className="flex items-center space-x-1 text-xs text-gray-600 dark:text-gray-300">
+                  <Calendar className="h-3 w-3" />
+                  <span>{formatDate(block.start)}</span>
+                </div>
+                <span className="text-gray-400">-</span>
+                <div className="flex items-center space-x-1 text-xs text-gray-600 dark:text-gray-300">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatDate(block.end)}</span>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+          <Badge variant="outline" className="text-xs bg-white/80 dark:bg-gray-700/80 border-gray-200 dark:border-gray-600">
+            {block.level}
+          </Badge>
+        </div>
       </div>
-    );
-  };
+      
+      {hasChildren && isExpanded && (
+        <div className="mt-2 space-y-1">
+          {block.children!.map((child, index) => (
+            <DashaItem key={index} block={child} level={level + 1} lang={lang} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-  if (!tree || tree.length === 0) {
+export function DashaAccordion({ tree = [], title, loading = false, lang }: DashaAccordionProps) {
+  const { lang: contextLang } = useLang();
+  const currentLang = lang || contextLang;
+
+  if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-            {title}
+      <Card className="rounded-2xl shadow-lg border-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
+        <CardHeader className="pb-3">
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="p-3 rounded-lg bg-white/60 dark:bg-gray-800/60">
+              <div className="flex items-center space-x-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-6 w-16" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!tree.length) {
+    return (
+      <Card className="rounded-2xl shadow-lg border-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl font-bold text-gray-800 dark:text-white flex items-center space-x-2">
+            <Crown className="h-6 w-6 text-violet-600" />
+            <span>{title || getString("dasha", currentLang)}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-            {isNepali ? "दशा डेटा उपलब्ध छैन" : "No dasha data available"}
-          </p>
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <Crown className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>{getString("no_data", currentLang)}</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-          {title}
+    <Card className="rounded-2xl shadow-lg border-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 hover:shadow-xl transition-all duration-300">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl font-bold text-gray-800 dark:text-white flex items-center space-x-2">
+          <Crown className="h-6 w-6 text-violet-600" />
+          <span>{title || getString("dasha", currentLang)}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {tree.map((dasha, index) => renderDashaItem(dasha, 0, `root-${index}`))}
-        </div>
-        
-        {/* Legend */}
-        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <p><strong>{isNepali ? "स्तर:" : "Levels:"}</strong></p>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                MAHA {isNepali ? "(महा)" : ""}
-              </span>
-              <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
-                ANTAR {isNepali ? "(अन्तर)" : ""}
-              </span>
-              <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-                PRATYANTAR {isNepali ? "(प्रत्यन्तर)" : ""}
-              </span>
-              <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
-                SUKSHMA {isNepali ? "(सूक्ष्म)" : ""}
-              </span>
-              <span className="bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200 px-2 py-1 rounded">
-                PRANA {isNepali ? "(प्राण)" : ""}
-              </span>
-            </div>
-          </div>
-        </div>
+      <CardContent className="space-y-2">
+        {tree.map((block, index) => (
+          <DashaItem key={index} block={block} lang={currentLang} />
+        ))}
       </CardContent>
     </Card>
   );

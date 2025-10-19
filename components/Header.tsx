@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Sun, Moon, Star, Menu, X, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
+import { useLang } from '@/hooks/useLang';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Star },
@@ -17,12 +18,13 @@ const navigation = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [language, setLanguage] = useState('ne'); // 'ne' for Nepali, 'en' for English
+  const { lang, setLang } = useLang();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
 
   const toggleLanguage = () => {
-    setLanguage(language === 'ne' ? 'en' : 'ne');
+    const nextLang = lang === 'en' ? 'hi' : lang === 'hi' ? 'ne' : 'en';
+    setLang(nextLang);
   };
 
   const toggleTheme = () => {
@@ -76,7 +78,7 @@ export default function Header() {
               className="hidden sm:flex items-center space-x-1"
             >
               <Globe className="w-4 h-4" />
-              <span>{language === 'ne' ? 'नेपाली' : 'English'}</span>
+              <span>{lang === 'en' ? 'English' : lang === 'hi' ? 'हिन्दी' : 'नेपाली'}</span>
             </Button>
 
             {/* Theme Toggle */}
@@ -141,7 +143,7 @@ export default function Header() {
                   className="flex items-center space-x-1"
                 >
                   <Globe className="w-4 h-4" />
-                  <span>{language === 'ne' ? 'नेपाली' : 'English'}</span>
+                  <span>{lang === 'en' ? 'English' : lang === 'hi' ? 'हिन्दी' : 'नेपाली'}</span>
                 </Button>
                 
                 <Button

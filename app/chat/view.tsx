@@ -9,11 +9,15 @@ import { ShadbalaTableCard } from "@/components/astro/ShadbalaTableCard";
 import { DashaAccordion } from "@/components/astro/DashaAccordion";
 import { PDFButtonCard } from "@/components/astro/PDFButtonCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useLang } from "@/hooks/useLang";
+import { getString } from "@/utils/strings";
 
 type Item = { url:string; type:string; name:string; text?:string; meta?:any };
 
 export default function ClientChatView() {
   const [items, setItems] = useState<Item[]>([]);
+  const { lang } = useLang();
+  
   const append = (t:string) => {
     const ta = document.getElementById("chat-composer") as HTMLTextAreaElement | null;
     if (ta) ta.value = `${ta.value}\n\n[FILE SNIPPET]\n${t}`;
@@ -58,7 +62,7 @@ export default function ClientChatView() {
           <ProfileCard data={data} />
           <UploadBox onUploaded={(it)=>setItems(prev=>[it, ...prev])} />
           <PDFButtonCard data={data} uploadedFiles={items} />
-          <textarea id="chat-composer" className="w-full h-24 rounded-xl border p-2 text-sm" placeholder="Type your question…"/>
+                      <textarea id="chat-composer" className="w-full h-24 rounded-xl border p-2 text-sm" placeholder={getString("composer", lang)}/>
         </div>
 
         <ErrorBoundary>
