@@ -1,37 +1,31 @@
 "use client";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useLang } from "@/hooks/useLang"; 
+import { t } from "@/utils/strings";
 
-type Row = { planet: string; signLabel: string; house: number; degree?: number|null; };
-export default function PlanetTableCard({ rows, loading }:{ rows: Row[]; loading?: boolean }) {
-  if (loading) {
-    return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-2 font-medium">ग्रह-स्थिती</CardHeader>
-        <CardContent className="space-y-2">
-          {Array.from({length:6}).map((_,i)=> <div key={i} className="h-8 bg-muted rounded"/>)}
-        </CardContent>
-      </Card>
-    );
-  }
+export default function PlanetTableCard({rows}:{rows:{planet:string;signLabel:string;house:number}[]}) {
+  const {lang}=useLang(); 
+  const s=t[lang];
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-2 font-medium">ग्रह-स्थिती</CardHeader>
+    <Card className="rounded-2xl shadow-md bg-gradient-to-br from-rose-100 via-amber-100 to-orange-100">
+      <CardHeader className="text-center font-semibold text-rose-700">{s.planets}</CardHeader>
       <CardContent className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-xs opacity-60">
-            <tr><th className="text-left py-2">ग्रह</th><th className="text-left">राशि</th><th className="text-left">भाव</th><th className="text-left">डिग्री</th></tr>
+          <thead className="text-xs bg-rose-200/60 text-rose-900">
+            <tr>
+              <th className="p-2 text-left">Planet</th>
+              <th className="p-2 text-left">Sign</th>
+              <th className="p-2 text-left">House</th>
+            </tr>
           </thead>
           <tbody>
-            {rows?.length ? rows.map((r,idx)=>(
-              <tr key={idx} className="border-t">
-                <td className="py-2">{r.planet}</td>
-                <td>{r.signLabel}</td>
-                <td>{r.house}</td>
-                <td>{r.degree ?? "—"}</td>
+            {rows?.length? rows.map((r,i)=>(
+              <tr key={i} className="border-t border-rose-300/40">
+                <td className="p-2">{r.planet}</td>
+                <td className="p-2">{r.signLabel}</td>
+                <td className="p-2">{r.house}</td>
               </tr>
-            )) : (
-              <tr><td colSpan={4} className="py-3 opacity-60">No rows</td></tr>
-            )}
+            )):<tr><td colSpan={3} className="p-3 text-center opacity-60">No data</td></tr>}
           </tbody>
         </table>
       </CardContent>

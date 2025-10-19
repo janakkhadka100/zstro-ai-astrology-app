@@ -1,30 +1,25 @@
 "use client";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useLang } from "@/hooks/useLang"; 
+import { t } from "@/utils/strings";
 
-export default function YogDoshGrid({ yogas, doshas, loading }:{
-  yogas: { label:string; factors:string[] }[];
-  doshas: { label:string; factors:string[] }[];
-  loading?: boolean;
-}) {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Array.from({length:4}).map((_,i)=>
-          <Card key={i} className="rounded-2xl shadow-sm"><CardContent className="h-16 bg-muted rounded"/></Card>
-        )}
-      </div>
-    );
-  }
-  const Item = ({title, sub}:{title:string; sub:string}) => (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-1 font-medium">{title}</CardHeader>
-      <CardContent className="text-xs opacity-80">{sub}</CardContent>
-    </Card>
-  );
+export default function YogDoshGrid({yogas,doshas}:{yogas:{label:string;factors:string[]}[]; doshas:{label:string;factors:string[]}[]}) {
+  const {lang}=useLang(); 
+  const s=t[lang];
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {yogas?.map((y,i)=> <Item key={`y-${i}`} title={`✅ ${y.label}`} sub={(y.factors||[]).join(", ") || "—"} />)}
-      {doshas?.map((d,i)=> <Item key={`d-${i}`} title={`⚠️ ${d.label}`} sub={(d.factors||[]).join(", ") || "—"} />)}
+    <div className="grid gap-4">
+      <Card className="rounded-2xl shadow-md bg-gradient-to-tr from-emerald-100 via-green-100 to-lime-100">
+        <CardHeader className="font-semibold text-emerald-800">{s.yog}</CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {yogas?.length? yogas.map((y,i)=><div key={i} className="bg-white/75 rounded-lg p-2">{y.label} — {y.factors.join(", ")}</div>):<div className="text-xs opacity-70">No Yogas</div>}
+        </CardContent>
+      </Card>
+      <Card className="rounded-2xl shadow-md bg-gradient-to-tr from-yellow-100 via-amber-100 to-orange-100">
+        <CardHeader className="font-semibold text-amber-800">{s.dosh}</CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {doshas?.length? doshas.map((d,i)=><div key={i} className="bg-white/75 rounded-lg p-2">{d.label} — {d.factors.join(", ")}</div>):<div className="text-xs opacity-70">No Doshas</div>}
+        </CardContent>
+      </Card>
     </div>
   );
 }

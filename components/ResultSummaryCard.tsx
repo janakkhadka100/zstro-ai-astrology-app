@@ -1,25 +1,24 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useLang } from "@/hooks/useLang"; 
+import { t } from "@/utils/strings";
 
-type Props = { asc?: string; moon?: string; loading?: boolean; };
-export default function ResultSummaryCard({ asc, moon, loading }: Props) {
-  if (loading) {
-    return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-2"><div className="h-5 w-40 bg-muted rounded"/></CardHeader>
-        <CardContent className="grid grid-cols-2 gap-3">
-          <div className="h-10 bg-muted rounded" />
-          <div className="h-10 bg-muted rounded" />
-        </CardContent>
-      </Card>
-    );
-  }
+export default function ResultSummaryCard({asc,moon,loading}:{asc?:string;moon?:string;loading?:boolean}){
+  const {lang}=useLang(); 
+  const s=t[lang];
+  if(loading) return <Card className="rounded-2xl h-24 bg-gradient-to-r from-indigo-100 to-sky-100 animate-pulse"/>;
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="pb-2 font-medium">कुण्डली सारांश</CardHeader>
-      <CardContent className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-xl border p-3"><div className="opacity-60 text-xs">लग्न</div><div className="font-medium">{asc || "—"}</div></div>
-        <div className="rounded-xl border p-3"><div className="opacity-60 text-xs">चन्द्र राशी</div><div className="font-medium">{moon || "—"}</div></div>
+    <Card className="rounded-2xl shadow-md bg-gradient-to-r from-indigo-200 via-sky-200 to-pink-200">
+      <CardHeader className="text-center font-semibold text-indigo-800">{s.summary}</CardHeader>
+      <CardContent className="grid grid-cols-2 gap-4">
+        <div className="rounded-xl bg-white/75 p-3 text-center">
+          <div className="text-xs opacity-70">{s.asc}</div>
+          <div className="font-bold text-indigo-700">{asc||"—"}</div>
+        </div>
+        <div className="rounded-xl bg-white/75 p-3 text-center">
+          <div className="text-xs opacity-70">{s.moon}</div>
+          <div className="font-bold text-indigo-700">{moon||"—"}</div>
+        </div>
       </CardContent>
     </Card>
   );
