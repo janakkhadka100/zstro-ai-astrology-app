@@ -1,7 +1,12 @@
 export const runtime = "nodejs";
 import { NextResponse } from "next/server";
-import pdfParse from "pdf-parse";
 import sharp from "sharp";
+
+// Dynamic import for pdf-parse to handle module issues
+async function parsePDF(buffer: Buffer) {
+  const pdfParse = await import("pdf-parse");
+  return pdfParse.default(buffer);
+}
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +18,7 @@ export async function POST(req: Request) {
     const buf = Buffer.from(await res.arrayBuffer());
 
     if (type === "application/pdf") {
-      const data = await pdfParse(buf as any);
+      const data = await parsePDF(buf);
       return NextResponse.json({
         ok: true,
         content: { kind:"pdf", text: (data.text || "").trim(), meta:{ pages: data.numpages }, url }

@@ -25,10 +25,11 @@ if (process.env.REDIS_URL) {
   }
 }
 
+export { pub, sub };
+
 export function userChannel(userId: string): string {
   return `cards:patch:${userId}`;
 }
-
 export function globalChannel(): string {
   return 'cards:global';
 }
