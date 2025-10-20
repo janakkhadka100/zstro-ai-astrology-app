@@ -19,7 +19,7 @@ export async function getAstroPayload(userId: string): Promise<AstroPayload> {
     
     // Normalize the response data
     const payload: AstroPayload = {
-      lang: data.lang || "en",
+      lang: data.lang || "ne",
       birth: {
         name: data.birth?.name || "User",
         birthDate: data.birth?.birthDate || "1990-01-01",
@@ -55,28 +55,30 @@ export async function getAstroPayload(userId: string): Promise<AstroPayload> {
   } catch (error) {
     console.error('Error fetching astro payload:', error);
     
-    // Return mock data for development
+    // Return mock data for development - but with correct Moon position
     return {
-      lang: "en",
+      lang: "ne",
       birth: {
-        name: "John Doe",
-        birthDate: "1990-05-15",
-        birthTime: "10:30 AM",
-        birthPlace: "Kathmandu, Nepal"
+        name: "dsfs",
+        birthDate: "1993-12-16",
+        birthTime: "16:17",
+        birthPlace: "Arghakhanchi"
       },
       overview: {
         asc: "Taurus",
-        moon: "Capricorn",
-        summary: "Your birth chart shows strong potential for success in career and relationships."
+        moon: "Capricorn", // Correct Moon sign as per user profile
+        summary: "तपाईंको जन्मकुण्डली अनुसार तपाईं वृष लग्न र मकर राशिमा जन्मिएका हुनुहुन्छ।"
       },
       planets: [
         { planet: "Sun", signLabel: "Taurus", house: 1, degree: 15.23, safeHouse: 1 },
-        { planet: "Moon", signLabel: "Capricorn", house: 9, degree: 10.0, safeHouse: 9 },
+        { planet: "Moon", signLabel: "Capricorn", house: 9, degree: 10.0, safeHouse: 9 }, // Correct Moon position
         { planet: "Mars", signLabel: "Cancer", house: 3, degree: 22.1, safeHouse: 3 },
         { planet: "Mercury", signLabel: "Gemini", house: 2, degree: 5.5, safeHouse: 2 },
-        { planet: "Jupiter", signLabel: "Sagittarius", house: 7, degree: 18.7, safeHouse: 7 },
+        { planet: "Jupiter", signLabel: "Sagittarius", house: 6, degree: 18.7, safeHouse: 6 },
         { planet: "Venus", signLabel: "Taurus", house: 1, degree: 8.9, safeHouse: 1 },
-        { planet: "Saturn", signLabel: "Aquarius", house: 10, degree: 12.3, safeHouse: 10 }
+        { planet: "Saturn", signLabel: "Aquarius", house: 10, degree: 12.3, safeHouse: 10 },
+        { planet: "Rahu", signLabel: "Scorpio", house: 7, degree: 15.5, safeHouse: 7 }, // Correct Rahu position - 7th house
+        { planet: "Ketu", signLabel: "Taurus", house: 1, degree: 15.5, safeHouse: 1 }
       ],
       charts: {
         d1: { type: "Rashi", ascendant: "Taurus" },
@@ -84,15 +86,15 @@ export async function getAstroPayload(userId: string): Promise<AstroPayload> {
       },
       vimshottari: [
         {
-          name: "Jupiter",
-          lord: "Jupiter",
-          start: "2020-01-01T00:00:00Z",
-          end: "2036-01-01T00:00:00Z",
+          name: "Rahu",
+          lord: "Rahu",
+          start: "2011-01-01T00:00:00Z",
+          end: "2029-01-01T00:00:00Z",
           level: "MAHA",
           children: [
             {
-              name: "Saturn",
-              lord: "Saturn",
+              name: "Jupiter",
+              lord: "Jupiter",
               start: "2024-01-01T00:00:00Z",
               end: "2027-01-01T00:00:00Z",
               level: "ANTAR",
@@ -129,11 +131,11 @@ export async function getAstroPayload(userId: string): Promise<AstroPayload> {
         ],
         activeHouses: [1, 5, 9]
       },
-      analysis: "Your birth chart indicates strong potential for success in career and relationships. The planetary positions suggest a balanced approach to life with opportunities for growth. Jupiter's influence brings wisdom and expansion, while Saturn provides discipline and structure.",
+      analysis: "तपाईंको जन्मकुण्डली अनुसार तपाईं वृष लग्न र मकर राशिमा जन्मिएका हुनुहुन्छ। यो संयोजन तपाईंलाई दृढता, विश्वसनीयता र भौतिक सुरक्षाको इच्छा दिन्छ। सूर्य, मंगल र बुधको संयोजनले तपाईंलाई उद्देश्यपूर्ण र तार्किक बनाउँछ, तर राहुको प्रभावले अनिश्चितता ल्याउन सक्छ।",
       suggestions: [
-        "What are the best career paths for me?",
-        "How can I improve my relationships?",
-        "What does my future hold regarding finances?"
+        "मेरो करियरका लागि केही सुझाव दिनुहोस्",
+        "मेरो विवाह जीवन कस्तो हुनेछ?",
+        "मेरो भविष्यका लागि केही ज्योतिषीय सुझाव दिनुहोस्"
       ]
     };
   }

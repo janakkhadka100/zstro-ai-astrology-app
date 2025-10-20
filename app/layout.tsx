@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 import { ThemeProvider } from '@/components/theme-provider';
-import { LangProvider } from '@/hooks/useLang';
+// LangProvider removed; using simple localStorage-based hook where needed
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -119,16 +119,14 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LangProvider>
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main className="flex-1">
-                <Toaster position="top-center" />
-                {children}
-              </main>
-              <Footer />
-            </div>
-          </LangProvider>
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">
+              <Toaster position="top-center" />
+              {children}
+            </main>
+            <Footer />
+          </div>
         </ThemeProvider>
       </body>
     </html>

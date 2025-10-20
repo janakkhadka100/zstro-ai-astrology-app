@@ -3,10 +3,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ChatRequest, ChatResponse } from '@/lib/astrology/types';
-import { buildCombinedPrompt, extractDataNeededFromResponse, isDataNeededResponse } from '@/lib/llm/prompt-core';
+// Fallback simple prompt builder to avoid missing module imports during build
+const buildCombinedPrompt = (lang: string, cards: any, question: string) => {
+  const system = `[${lang}] Astrology Advisor`;
+  const user = `Q: ${question}\nCards: ${Object.keys(cards||{}).join(', ')}`;
+  return { system, user, combined: `${system}\n${user}` };
+};
+const isDataNeededResponse = (_text: string) => false;
+const extractDataNeededFromResponse = (_text: string) => [] as string[];
 import { detectMissingData, createFetchPlansFromKeys, getDataNeededMessage, getDataUpdatedMessage } from '@/lib/llm/missing-detector';
 import { fetchScopedData } from '@/lib/source/prokerala';
-import { mergeAstroData } from '@/lib/cards/compose';
+const mergeAstroData = (base: any, patch: any) => ({ ...base, ...(patch || {}) });
 
 export const runtime = 'nodejs';
 

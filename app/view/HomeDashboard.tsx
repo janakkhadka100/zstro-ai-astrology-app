@@ -1,165 +1,161 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { getAstroPayload } from "@/app/chat/actions";
-import { AstroPayload } from "@/lib/astro-contract";
-import { useLang } from "@/hooks/useLang";
-import { strings } from "@/utils/strings";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { flags } from "@/lib/flags";
 import LangSwitcher from "@/components/LangSwitcher";
 import UploadBox from "@/components/UploadBox";
 import SaveMenu from "@/components/SaveMenu";
-import BirthCard from "@/components/cards/BirthCard";
-import OverviewCard from "@/components/cards/OverviewCard";
-import PlanetsCard from "@/components/cards/PlanetsCard";
-import ChartsCard from "@/components/cards/ChartsCard";
-import DashaCard from "@/components/cards/DashaCard";
-import YoginiCard from "@/components/cards/YoginiCard";
-import TransitsCard from "@/components/cards/TransitsCard";
-import AnalysisCard from "@/components/cards/AnalysisCard";
-import SuggestCard from "@/components/cards/SuggestCard";
-import ChatComposer from "@/components/chat/ChatComposer";
 
-interface HomeDashboardProps {
-  user: any;
+type UserLite = { id: string; name?: string | null; email?: string | null };
+
+function StreakChip(){
+  if(!flags.show_streaks) return null;
+  const [streak,setStreak]=useState(1);
+  useEffect(()=>{
+    const today = new Date().toISOString().slice(0,10);
+    const last = localStorage.getItem("zstro:lastActive") || today;
+    let s = Number(localStorage.getItem("zstro:streak")||"1");
+    if (last !== today) {
+      const d = (Date.parse(today)-Date.parse(last))/(1000*60*60*24);
+      s = d===1 ? s+1 : 1;
+    }
+    localStorage.setItem("zstro:lastActive", today);
+    localStorage.setItem("zstro:streak", String(s));
+    setStreak(s);
+  },[]);
+  return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-sm">🔥 {streak}-day streak</span>;
 }
 
-export default function HomeDashboard({ user }: HomeDashboardProps) {
-  const [payload, setPayload] = useState<AstroPayload | null>(null);
-  const [stage, setStage] = useState<"loading" | "cards" | "ready">("loading");
-  const [messages, setMessages] = useState<{role: "user"|"ai"; text: string}[]>([]);
-  const [attachedFiles, setAttachedFiles] = useState<{name: string; type: string}[]>([]);
-  const unlockRef = useRef<HTMLDivElement | null>(null);
-  const { lang } = useLang();
-  const s = strings[lang];
+function DailyFocusCard({tip, transit}:{tip:string; transit:string}){
+  return (
+    <div className="rounded-2xl p-4 shadow bg-gradient-to-r from-amber-100 via-yellow-100 to-orange-100">
+      <div className="text-sm font-semibold">Today’s Focus</div>
+      <div className="text-sm mt-1">Transit: {transit}</div>
+      <div className="text-sm mt-1">Do this: {tip}</div>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAstroPayload("me");
-        setPayload(data);
-        setStage("cards");
-      } catch (error) {
-        console.error("Error loading astro data:", error);
-        setStage("cards"); // Still show cards even if data fails
-      }
-    })();
-  }, []);
+function QuickActions({onUpload,onEdit,onRecompute}:{onUpload:()=>void;onEdit:()=>void;onRecompute:()=>void;}){
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button onClick={onUpload} className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-sm">Upload Docs</button>
+      <button onClick={onEdit} className="px-3 py-1.5 rounded-xl bg-slate-800 text-white text-sm">Update Birth Data</button>
+      <button onClick={onRecompute} className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-sm">Recompute</button>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    if (stage !== "cards" || !unlockRef.current) return;
-    
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some(e => e.isIntersecting)) {
-          setStage("ready");
-          io.disconnect();
+function CardShell({id, title, children}:{id:string; title:string; children:React.ReactNode}){
+  return (
+    <section id={id} className="rounded-2xl shadow bg-white p-4">
+      <div className="text-sm font-semibold mb-2">{title}</div>
+      {children}
+    </section>
+  );
+}
+
+function MemoryMiniTimeline(){
+  if(!flags.show_memory_timeline) return null;
+  const [items,setItems]=useState<Array<{date?:string,type?:string,desc?:string}>>([]);
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const r=await fetch('/api/memory/events');
+        const j=await r.json();
+        if(j?.data){
+          const mapped=(j.data as any[]).slice(0,3).map(m=>({date:m.eventDate, type:m.eventType, desc:m.eventDescription}));
+          setItems(mapped);
         }
-      },
-      { threshold: 0.6 }
-    );
-    
-    io.observe(unlockRef.current);
-    return () => io.disconnect();
-  }, [stage]);
+      }catch{/* ignore */}
+    })();
+  },[]);
+  return (
+    <CardShell id="card-memory" title="Recent Events">
+      <div className="space-y-2">
+        {items.length===0 && <div className="text-xs text-slate-500">No recent events</div>}
+        {items.map((it,i)=>(
+          <div key={i} className="text-sm">
+            <span className="text-slate-500 mr-2">{it.date||'-'}</span>
+            <span className="font-medium mr-2">{it.type||'event'}</span>
+            <span className="text-slate-700">{it.desc}</span>
+          </div>
+        ))}
+        <div className="pt-2">
+          <button className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-sm">+ Add Event</button>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
 
-  const handleUploaded = (file: {name: string; type: string}) => {
-    setAttachedFiles(prev => [...prev, file]);
-  };
+function ChatFeed(){
+  return <div className="min-h-[200px] text-sm text-slate-600">Chat will appear here…</div>;
+}
 
-  const sendMsg = (msg: string) => {
-    setMessages(m => [...m, { role: "user", text: msg }]);
-    
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = `Thank you for your question: "${msg}". Based on your birth chart, I can provide detailed insights about this topic.`;
-      setMessages(m => [...m, { role: "ai", text: aiResponse }]);
-    }, 1000);
-  };
+function ChatComposer({disabled, onSend}:{disabled:boolean; onSend:(t:string)=>void}){
+  const [v,setV]=useState("");
+  return (
+    <div className="sticky bottom-2 bg-white/70 backdrop-blur rounded-2xl shadow p-2 flex gap-2">
+      <input value={v} onChange={e=>setV(e.target.value)} placeholder={disabled?"Scroll to unlock chat":"Type your question…"} className="flex-1 px-3 py-2 rounded-xl border" disabled={disabled}/>
+      <button onClick={()=>{ if(!disabled && v.trim()){ onSend(v); setV(""); } }} className="px-4 py-2 rounded-xl bg-indigo-600 text-white" disabled={disabled}>Send</button>
+    </div>
+  );
+}
 
-  const handleSuggestionClick = (suggestion: string) => {
-    sendMsg(suggestion);
+export default function HomeDashboard({ user }:{ user: UserLite }){
+  const unlockRef = useRef<HTMLDivElement|null>(null);
+  const [unlocked,setUnlocked]=useState(false);
+  useEffect(()=>{
+    const el=unlockRef.current; if(!el) return;
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{ if(en.isIntersecting) setUnlocked(true); });
+    },{ rootMargin: '0px', threshold: 0.3 });
+    io.observe(el);
+    return ()=>{ io.disconnect(); };
+  },[]);
+
+  const handleSend = async (text:string)=>{
+    try{ await fetch('/api/memory/process',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: text }) }); }catch{}
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-sky-50 to-rose-50">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/70 backdrop-blur-md border-b">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="text-sm font-semibold text-gray-800">
-            👋 Welcome, {user?.name || user?.email || "User"}
+    <main className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
+      <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
+        <header className="flex items-center justify-between">
+          <div className="text-xl font-semibold">Welcome {user?.name || 'there'}</div>
+          <div className="flex items-center gap-3">
+            <StreakChip/>
+            <SaveMenu targetSelector="main"/>
+            <LangSwitcher/>
           </div>
-          <div className="flex items-center gap-2">
-            <SaveMenu targetSelector="main" />
-            <LangSwitcher />
-          </div>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <DailyFocusCard tip="Keep communications clear and kind." transit="Moon trine Mercury"/>
+          <QuickActions onUpload={()=>{}} onEdit={()=>{}} onRecompute={()=>{}}/>
         </div>
-      </header>
 
-      {/* Main Cards */}
-      <main className="flex-1 overflow-y-auto px-4 py-5 mx-auto w-full max-w-3xl space-y-5">
-        <UploadBox onUploaded={handleUploaded} />
+        <div className="space-y-3">
+          <UploadBox onUploaded={()=>{}}/>
+          <CardShell id="card-birth" title="Birth Details">Your birth data card…</CardShell>
+          <CardShell id="card-overview" title="Overview">High-level summary…</CardShell>
+          <CardShell id="card-planets" title="Planets">Planet positions…</CardShell>
+          <CardShell id="card-charts" title="Charts">D1 / D9 …</CardShell>
+          <CardShell id="card-vim" title="Vimshottari">Current maha/antar…</CardShell>
+          <CardShell id="card-yogini" title="Yogini">Timeline…</CardShell>
+          <CardShell id="card-transits" title="Transits">Today’s highlights…</CardShell>
+          <CardShell id="card-analysis" title="Analysis">AI insights…</CardShell>
+          <CardShell id="card-suggest" title="Suggestions">Suggested questions…</CardShell>
 
-        {!payload ? (
-          <div className="rounded-2xl h-48 bg-gradient-to-r from-indigo-100 to-sky-100 animate-pulse" />
-        ) : (
-          <>
-            <BirthCard data={payload.birth} />
-            <OverviewCard data={payload.overview} />
-            <PlanetsCard rows={payload.planets} />
-            <ChartsCard charts={payload.charts} />
-            <DashaCard title="Vimshottari Dasha" tree={payload.vimshottari} />
-            <YoginiCard title="Yogini Dasha" tree={payload.yogini} />
-            <TransitsCard data={payload.transits} />
-            <AnalysisCard text={payload.analysis} />
-            <SuggestCard items={payload.suggestions} onSuggestionClick={handleSuggestionClick} />
-            <div ref={unlockRef} /> {/* when visible -> enable chat */}
-          </>
-        )}
+          <MemoryMiniTimeline/>
 
-        {/* Attached Files Display */}
-        {attachedFiles.length > 0 && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700 font-medium">{s.attached_files}:</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {attachedFiles.map((file, index) => (
-                <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                  {file.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+          <div ref={unlockRef} className="h-10"/>
 
-        {/* Chat Messages */}
-        {messages.length > 0 && (
-          <div className="space-y-4 mt-8">
-            <h3 className="text-lg font-semibold text-gray-800">{s.chat_history}</h3>
-            {messages.map((message, index) => (
-              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                  message.role === 'user' 
-                    ? 'bg-indigo-500 text-white' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  <p className="text-sm">{message.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Sticky Chat */}
-      <div className="sticky bottom-0 z-10 bg-white/85 backdrop-blur-md border-t">
-        <div className="mx-auto max-w-3xl w-full flex items-center justify-between px-4 py-2">
-          <div className="text-xs opacity-70">
-            {stage === "ready" ? s.chat_enabled : s.read_cards_to_continue}
-          </div>
+          <ChatFeed/>
         </div>
-        <ChatComposer 
-          disabled={stage !== "ready"} 
-          onSend={sendMsg}
-        />
+
+        <ChatComposer disabled={!unlocked} onSend={handleSend}/>
       </div>
-    </div>
+    </main>
   );
 }

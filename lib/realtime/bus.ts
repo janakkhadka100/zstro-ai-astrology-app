@@ -3,19 +3,27 @@
 
 import Redis from "ioredis";
 
-const url = process.env.REDIS_URL || 'redis://localhost:6379';
+// Create Redis connections only if REDIS_URL is available (for Vercel deployment)
+let pub: Redis | null = null;
+let sub: Redis | null = null;
 
-export const pub = new Redis(url, {
-  retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-});
+if (process.env.REDIS_URL) {
+  try {
+    pub = new Redis(process.env.REDIS_URL, {
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
 
-export const sub = new Redis(url, {
-  retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-});
+    sub = new Redis(process.env.REDIS_URL, {
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+  } catch (error) {
+    console.warn('Redis connection failed, realtime features disabled:', error);
+  }
+}
 
 export function userChannel(userId: string): string {
   return `cards:patch:${userId}`;
@@ -31,6 +39,11 @@ export function systemChannel(): string {
 
 // Publish a patch to a specific user
 export async function publishUserPatch(userId: string, patch: any): Promise<void> {
+  if (!pub) {
+    console.warn('Redis not available, skipping user patch publish');
+    return;
+  }
+  
   try {
     await pub.publish(userChannel(userId), JSON.stringify(patch));
     console.log(`Published patch to user ${userId}:`, patch);
@@ -41,6 +54,11 @@ export async function publishUserPatch(userId: string, patch: any): Promise<void
 
 // Publish a global update
 export async function publishGlobalUpdate(update: any): Promise<void> {
+  if (!pub) {
+    console.warn('Redis not available, skipping global update publish');
+    return;
+  }
+  
   try {
     await pub.publish(globalChannel(), JSON.stringify(update));
     console.log('Published global update:', update);
@@ -51,6 +69,11 @@ export async function publishGlobalUpdate(update: any): Promise<void> {
 
 // Publish a system message
 export async function publishSystemMessage(message: any): Promise<void> {
+  if (!pub) {
+    console.warn('Redis not available, skipping system message publish');
+    return;
+  }
+  
   try {
     await pub.publish(systemChannel(), JSON.stringify(message));
     console.log('Published system message:', message);
@@ -61,6 +84,10 @@ export async function publishSystemMessage(message: any): Promise<void> {
 
 // Health check for Redis connection
 export async function checkRedisHealth(): Promise<boolean> {
+  if (!pub || !sub) {
+    return false;
+  }
+  
   try {
     await pub.ping();
     await sub.ping();

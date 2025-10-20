@@ -19,7 +19,8 @@ import {
   district,
   payment,
   subscription,
-  Payment
+  Payment,
+  userMemory
 } from './schema';
 import { ArtifactKind } from '@/components/artifact';
 
@@ -714,6 +715,45 @@ export async function getUserRole(
     return selectedUser || null;
   } catch (error) {
     console.error("Failed to get users role from database", error);
+    throw error;
+  }
+}
+
+// Memory system functions
+export async function rememberEvent(
+  userId: string, 
+  event: { 
+    eventType: string; 
+    eventDate?: string; 
+    eventDescription: string; 
+    planetaryContext?: any 
+  }
+) {
+  try {
+    await db.insert(userMemory).values({
+      userId,
+      eventDate: event.eventDate ? new Date(event.eventDate) : null,
+      eventType: event.eventType,
+      eventDescription: event.eventDescription,
+      planetaryContext: event.planetaryContext || null,
+      createdAt: new Date(),
+    });
+  } catch (error) {
+    console.error('Failed to remember event:', error);
+    throw error;
+  }
+}
+
+export async function getUserMemories(userId: string, limit = 50) {
+  try {
+    return await db
+      .select()
+      .from(userMemory)
+      .where(eq(userMemory.userId, userId))
+      .orderBy(desc(userMemory.createdAt))
+      .limit(limit);
+  } catch (error) {
+    console.error('Failed to get user memories:', error);
     throw error;
   }
 }

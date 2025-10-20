@@ -12,10 +12,14 @@ export const authConfig = {
   ],
   callbacks: {
     async authorized({ auth, request: { nextUrl } }) {
+      // Allow all API routes without authentication
+      if (nextUrl.pathname.startsWith('/api')) {
+        return true;
+      }
 
       const isOnAdmin = nextUrl.pathname.startsWith("/dashboard");
       const isLoggedIn = !!auth?.user;
-      const isOnChat = nextUrl.pathname.startsWith('/');
+      const isOnChat = nextUrl.pathname.startsWith('/') && !nextUrl.pathname.startsWith('/api');
       const isOnRegister = nextUrl.pathname.startsWith('/register');
       const isOnLogin = nextUrl.pathname.startsWith('/login');
       const isOnForgotPassword = nextUrl.pathname.startsWith('/forgot-password');

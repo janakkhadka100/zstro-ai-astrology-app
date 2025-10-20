@@ -1,13 +1,20 @@
 "use client";
-import { createContext, useContext, useState, ReactNode } from "react";
+import { useEffect, useState } from "react";
 
-export type Lang = "en"|"hi"|"ne";
+export type Lang = "en" | "hi" | "ne";
 
-const Ctx = createContext<{lang:Lang; setLang:(v:Lang)=>void}>({lang:"en", setLang:()=>{}});
+export function useLang() {
+  const [lang, setLang] = useState<Lang>("en");
 
-export function LangProvider({children}:{children:ReactNode}){ 
-  const [lang,setLang]=useState<Lang>("en"); 
-  return <Ctx.Provider value={{lang,setLang}}>{children}</Ctx.Provider>; 
+  useEffect(() => {
+    const saved = (typeof window !== 'undefined' && localStorage.getItem("zstro:lang")) as Lang | null;
+    if (saved === "en" || saved === "hi" || saved === "ne") setLang(saved);
+  }, []);
+
+  const update = (l: Lang) => {
+    setLang(l);
+    try { localStorage.setItem("zstro:lang", l); } catch {}
+  };
+
+  return { lang, setLang: update } as const;
 }
-
-export const useLang = ()=>useContext(Ctx);

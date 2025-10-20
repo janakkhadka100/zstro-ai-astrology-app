@@ -4,11 +4,15 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, jsonb, uuid, integer, boolean, index } from 'drizzle-orm/pg-core';
 
+// Import memory schema
+export * from './schema/memory';
+
 // Users table
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
   name: text('name'),
+  memoryConsent: boolean('memory_consent').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   lastLoginAt: timestamp('last_login_at'),
@@ -112,7 +116,7 @@ export const chat = pgTable('chat', {
 export const document = pgTable('document', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  title: text('title').notNull(),
+    title: text('title').notNull(),
   content: text('content').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

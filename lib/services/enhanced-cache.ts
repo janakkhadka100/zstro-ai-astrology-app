@@ -4,6 +4,21 @@
 import { Redis } from 'ioredis';
 import { logger } from './logger';
 
+// Create Redis connection only if REDIS_URL is available (for Vercel deployment)
+let redisClient: Redis | null = null;
+
+if (process.env.REDIS_URL) {
+  try {
+    redisClient = new Redis(process.env.REDIS_URL, {
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+  } catch (error) {
+    console.warn('Redis connection failed, enhanced caching disabled:', error);
+  }
+}
+
 export interface CacheConfig {
   redis: {
     url: string;
@@ -364,7 +379,7 @@ export const CacheVersions = {
 // Initialize cache service
 const cacheConfig: CacheConfig = {
   redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: process.env.REDIS_URL || '',
     keyPrefix: 'zstro:',
     defaultTTL: 3600, // 1 hour
   },

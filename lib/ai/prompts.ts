@@ -3,6 +3,10 @@
 import { ArtifactKind } from '@/components/artifact';
 import { auth } from '@/app/(auth)/auth';
 import { getAstroDataByUserIdAndType, getUserById } from '@/lib/db/queries';
+import { getChatHistory, getRecentEvents } from '@/lib/chat/memory';
+import { extractEvent } from '@/lib/ai/eventExtractor';
+import { learnFromMemories, MemoryInsights } from '@/lib/ai/learnFromMemories';
+import { getPlanetaryContext } from '@/lib/ai/planetaryContext';
 
 /* ────────────────────────────────────────────────────────────────────────────
    Minimal utils
@@ -48,7 +52,7 @@ function makeGreeting(lang: Lang, name?: string | null, gender?: string | null) 
   return `🙏 Namaste${safeName ? `, ${safeName}` : ''} —`;
 }
 
-/* ── GLOBAL ROLE PROMPT (strict, human tone) ─────────────────────────────── */
+/* ── GLOBAL ROLE PROMPT (strict, human tone + memory) ─────────────────────── */
 export const textPrompt = `
 You are a seasoned Vedic astrologer who writes like a kind human mentor.
 Act like a professional astrologer and spiritual communication expert. Your task is to write astrological insights, horoscope readings, and spiritual guidance in a natural, human-like tone that feels authentic and empathetic — not robotic or generic.
@@ -81,6 +85,13 @@ DETERMINISTIC CLAIMS
 - For Ruchaka: require BOTH sign∈{Aries,Scorpio,Capricorn} AND WS-kendra∈{1,4,7,10}; else "not present".
 - Output one consistent verdict; no flip-flop.
 
+MEMORY & PERSONALIZATION
+- Use the user's past events and patterns to provide personalized insights.
+- Reference specific past events when relevant: "तपाईंको अतीतमा यस्तो घटना भएको थियो जब..."
+- Connect current planetary positions to past patterns: "यो समयमा पनि त्यस्तै ग्रह स्थिति छ जस्तै..."
+- Provide warnings based on past patterns: "अघिल्लो पटक यस्तो ग्रह स्थितिमा तपाईंलाई समस्या भएको थियो..."
+- Learn from user's unique planetary responses and adapt advice accordingly.
+
 REMEDIES
 - Practical first (habits/timing); then mantra/dāna if appropriate. No fear-language. Gemstones only if explicitly supported.
 
@@ -97,6 +108,7 @@ STEP-BY-STEP VOICE
 4) Conversational like a trusted astrologer.
 5) Realistic; acknowledge uncertainty.
 6) Honest, compassionate, grounded.
+7) Remember and reference past conversations and events.
 `;
 
 /* ── Not for coding requests ──────────────────────────────────────────────── */
@@ -125,12 +137,97 @@ function toYMD(d: Date) {
 }
 type StrengthRow = { name: string; value: number };
 
-/* ── CONTEXT: pull kundli/planets/dasha + strict Calendar ─────────────────── */
+/* ── CONTEXT: pull kundli/planets/dasha + strict Calendar + Memory ─────────── */
 export async function getAstrologyContext(): Promise<string> {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return '';
 
+  // Get memory insights
+  let memoryInsights: MemoryInsights | null = null;
+  try {
+    memoryInsights = await learnFromMemories(userId);
+  } catch (error) {
+    log('Memory insights error:', error);
+  }
+
+  // Get recent events from chat history
+  let recentEvents = '';
+  try {
+    const events = await getRecentEvents(userId, 30);
+    if (events.length > 0) {
+      recentEvents = `\n📚 हालका घटनाहरु (पछिल्लो ३० दिन):\n${events.map(e => `- ${e.eventType}: ${e.eventDescription} (${e.eventDate || 'तिथि नभएको'})`).join('\n')}`;
+    }
+  } catch (error) {
+    log('Recent events error:', error);
+  }
+
+  // First try to get data from the unified API
+  try {
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/astro/bootstrap`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.overview) {
+        // Use the unified API data
+        const userDetail = await getUserById(userId);
+        
+        const userDetails = `
+- User Profile Information:
+  Full Name: ${userDetail?.name || 'N/A'}
+  Date of Birth: ${userDetail?.dob || 'N/A'}
+  Time of Birth: ${userDetail?.time || 'N/A'}
+  Place of Birth: ${userDetail?.place || 'N/A'}
+  Gender: ${userDetail?.gender || 'N/A'}
+`;
+
+        // Add memory insights if available
+        let memoryBlock = '';
+        if (memoryInsights) {
+          memoryBlock = `\n🧠 व्यक्तिगत ज्योतिष पैटर्नहरु:
+${memoryInsights.patterns.map(p => `- ${p.description} (विश्वास: ${Math.round(p.confidence * 100)}%)`).join('\n')}
+
+${memoryInsights.predictions.length > 0 ? `\n🔮 भविष्यवाणीहरु:
+${memoryInsights.predictions.map(p => `- ${p.description} (${p.dateRange}) - ${p.advice}`).join('\n')}` : ''}
+
+${memoryInsights.recommendations.length > 0 ? `\n💡 सुझावहरु:
+${memoryInsights.recommendations.map(r => `- ${r}`).join('\n')}` : ''}`;
+        }
+
+        return `
+👤 प्रयोगकर्ताको विवरण:
+${userDetails}
+
+🕉️ जन्मकुण्डली विवरण:
+लग्न: ${data.overview?.asc || 'N/A'} | चन्द्र राशि: ${data.overview?.moon || 'N/A'}
+
+🪐 ग्रह स्थिति:
+${(data.planets || []).map((p: any) => {
+  const name = p?.planet || p?.name || 'ग्रह';
+  const rasi = p?.signLabel || p?.rasi?.name || p?.sign || 'N/A';
+  const house = p?.house || p?.house?.num || 'N/A';
+  const deg = p?.degree != null ? `, ${Number(p.degree).toFixed(2)}°` : '';
+  return `- ${name}: ${rasi}, House ${house}${deg}`;
+}).join('\n')}
+
+📜 महादशा Timeline:
+${(data.vimshottari || []).map((d: any) => `- ${d.name} (${d.start} → ${d.end})`).join('\n')}
+
+${data.analysis ? `\n📝 विश्लेषण:\n${data.analysis}` : ''}${recentEvents}${memoryBlock}
+
+**महत्वपूर्ण**: यो डेटा युजर प्रोफाइलमा भएको वास्तविक ज्योतिष डेटा हो। चन्द्रमा ${data.overview?.moon || 'N/A'} राशिमा छ र ${data.overview?.moon === 'Capricorn' ? '९औँ घरमा' : 'अन्य घरमा'} स्थित छ। राहु ७औँ घरमा स्थित छ। यो डेटा सत्य मानेर विश्लेषण गर्नुहोस्।
+`.trim();
+      }
+    }
+  } catch (error) {
+    log('Unified API error, falling back to individual queries:', error);
+  }
+
+  // Fallback to individual queries
   const kundliRaw: any = await getAstroDataByUserIdAndType({ usersId: userId, type: 'kundli' });
   const planetRaw: any = await getAstroDataByUserIdAndType({ usersId: userId, type: 'planetPosition' });
   const dashaRaw: any = await getAstroDataByUserIdAndType({ usersId: userId, type: 'dashaPeriods' });

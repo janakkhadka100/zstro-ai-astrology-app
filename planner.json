@@ -1,0 +1,130 @@
+{
+  "version": "1.1",
+  "name": "ZSTRO AI – Conversational Memory & Predictive Insights",
+  "description": "Resilient pipeline: chat→event extract→planetary snapshot→memory→pattern learner, with retries, caching, consent, metrics, DLQ.",
+  "env_required": [
+    "OPENAI_API_KEY",
+    "PROKERALA_API_KEY",
+    "DATABASE_URL",
+    "KV_REST_API_URL",
+    "KV_REST_API_TOKEN",
+    "INSIGHTS_MODEL",
+    "EXTRACTOR_MODEL"
+  ],
+  "triggers": [
+    { "id": "onUserMessage", "type": "event", "match": "chat.message.user", "debounce_ms": 200 }
+  ],
+  "globals": {
+    "retry": { "retries": 3, "min_delay_ms": 250, "max_delay_ms": 4000, "jitter": true, "backoff": "exponential" },
+    "log_level": "info"
+  },
+  "pipeline": [
+    {
+      "id": "guardConsent",
+      "title": "Check user consent for memory",
+      "action": "node",
+      "file": "scripts/automation/guardConsent.ts",
+      "args": { "userId": "$ctx.user.id" },
+      "when": "true",
+      "on_failure": "continue",
+      "outputs": { "consent": "$res.consent" }
+    },
+    {
+      "id": "storeChat",
+      "title": "Store chat (with PII redaction)",
+      "action": "node",
+      "file": "scripts/automation/storeChat.ts",
+      "args": { "userId": "$ctx.user.id", "message": "$ctx.message.text", "lang": "$ctx.user.lang", "messageId": "$ctx.message.id" },
+      "continue_on_error": true
+    },
+    {
+      "id": "extractEvent",
+      "title": "Extract life-event (JSON) with confidence",
+      "action": "node",
+      "file": "scripts/automation/extractEvent.ts",
+      "args": { "text": "$ctx.message.text", "lang": "$ctx.user.lang" },
+      "outputs": { "event": "$res.event" }
+    },
+    {
+      "id": "gateQuality",
+      "title": "Confidence & dedup gate",
+      "action": "node",
+      "file": "scripts/automation/gateQuality.ts",
+      "args": { 
+        "userId": "$ctx.user.id", 
+        "event": "$steps.extractEvent.outputs.event", 
+        "messageId": "$ctx.message.id",
+        "windowDays": 7,
+        "minConfidence": 0.5
+      },
+      "outputs": { "accepted": "$res.accepted", "event": "$res.event", "hash": "$res.hash" }
+    },
+    {
+      "id": "fetchPlanetaryContext",
+      "title": "Planetary snapshot (cached) for event date",
+      "when": "$steps.gateQuality.outputs.accepted && $steps.gateQuality.outputs.event.eventDate",
+      "action": "node",
+      "file": "scripts/automation/fetchPlanetary.ts",
+      "args": {
+        "userId": "$ctx.user.id",
+        "eventDate": "$steps.gateQuality.outputs.event.eventDate",
+        "assumedTime": "$steps.gateQuality.outputs.event.assumedTime || false"
+      },
+      "outputs": { "planetaryContext": "$res.planetaryContext" }
+    },
+    {
+      "id": "saveUserMemory",
+      "title": "Persist event + planetary context (dual-write)",
+      "when": "$steps.gateQuality.outputs.accepted",
+      "action": "node",
+      "file": "scripts/automation/saveMemory.ts",
+      "args": {
+        "userId": "$ctx.user.id",
+        "event": "$steps.gateQuality.outputs.event",
+        "hash": "$steps.gateQuality.outputs.hash",
+        "planetaryContext": "$steps.fetchPlanetaryContext.outputs.planetaryContext",
+        "messageId": "$ctx.message.id",
+        "model": "$env.EXTRACTOR_MODEL",
+        "promptVersion": "v2"
+      }
+    },
+    {
+      "id": "learnFromMemories",
+      "title": "Learn patterns (batch-aware)",
+      "action": "node",
+      "file": "scripts/automation/learnFromMemories.ts",
+      "args": { "userId": "$ctx.user.id", "limit": 50, "batchOnly": true, "deltaThreshold": 3, "model": "$env.INSIGHTS_MODEL" },
+      "outputs": { "insights": "$res.insights" }
+    },
+    {
+      "id": "updateInsightCache",
+      "title": "Cache insights",
+      "action": "node",
+      "file": "scripts/automation/updateInsightCache.ts",
+      "args": { "userId": "$ctx.user.id", "insights": "$steps.learnFromMemories.outputs.insights" }
+    },
+    {
+      "id": "emitAssistantHint",
+      "title": "Proactive hint (soft)",
+      "action": "node",
+      "file": "scripts/automation/emitHint.ts",
+      "args": {
+        "userId": "$ctx.user.id",
+        "insights": "$steps.learnFromMemories.outputs.insights",
+        "event": "$steps.gateQuality.outputs.event"
+      },
+      "continue_on_error": true
+    }
+  ],
+  "dlq": { "route": "scripts/automation/dlqHandler.ts" },
+  "rate_limits": { "extractEvent_per_min": 20, "prokerala_per_min": 30 },
+  "observability": {
+    "log_level": "info",
+    "structured": true,
+    "metrics_endpoint": "/api/metrics",
+    "redact_keys": ["OPENAI_API_KEY", "PROKERALA_API_KEY", "KV_REST_API_TOKEN"]
+  },
+  "cron": [
+    { "id": "nightlyLearn", "schedule": "0 20 * * *", "file": "scripts/cron/nightlyLearn.ts", "args": { "limit": 200, "model": "$env.INSIGHTS_MODEL" } }
+  ]
+}

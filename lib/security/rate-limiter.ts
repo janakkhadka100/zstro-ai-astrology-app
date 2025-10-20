@@ -4,7 +4,19 @@
 import { Redis } from 'ioredis';
 import { RateLimitInput } from './validators';
 
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+// Create Redis connection only if REDIS_URL is available (for Vercel deployment)
+let redis: Redis | null = null;
+if (process.env.REDIS_URL) {
+  try {
+    redis = new Redis(process.env.REDIS_URL, {
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+  } catch (error) {
+    console.warn('Redis connection failed, rate limiting disabled:', error);
+  }
+}
 
 interface RateLimitResult {
   allowed: boolean;
@@ -46,11 +58,11 @@ export const RATE_LIMITS = {
 } as const;
 
 export class RateLimiter {
-  private redis: Redis;
+  private redis: Redis | null;
   private configs: Map<string, RateLimitConfig>;
 
-  constructor(redisClient?: Redis) {
-    this.redis = redisClient || redis;
+  constructor(redisClient?: Redis | null) {
+    this.redis = redisClient !== undefined ? redisClient : redis;
     this.configs = new Map();
     
     // Initialize default configurations
@@ -93,6 +105,15 @@ export class RateLimiter {
     const windowStart = now - windowMs;
 
     try {
+      // If Redis is not available, allow all requests
+      if (!this.redis) {
+        return {
+          allowed: true,
+          remaining: Infinity,
+          resetTime: Date.now() + 60000
+        };
+      }
+
       // Use Redis pipeline for atomic operations
       const pipeline = this.redis.pipeline();
       
@@ -160,6 +181,8 @@ export class RateLimiter {
 
   // Reset rate limit for an identifier
   async resetLimit(identifier: string, action: string): Promise<void> {
+    if (!this.redis) return;
+    
     const configKey = `${action}`;
     const key = `rate_limit:${configKey}:${identifier}`;
     
@@ -190,6 +213,15 @@ export class RateLimiter {
     const windowStart = now - windowMs;
 
     try {
+      // If Redis is not available, return unlimited status
+      if (!this.redis) {
+        return {
+          allowed: true,
+          remaining: Infinity,
+          resetTime: Date.now() + 60000
+        };
+      }
+
       // Remove expired entries and count current
       await this.redis.zremrangebyscore(key, 0, windowStart);
       const currentCount = await this.redis.zcard(key);
@@ -217,6 +249,8 @@ export class RateLimiter {
 
   // Cleanup expired rate limit entries
   async cleanup(): Promise<number> {
+    if (!this.redis) return 0;
+    
     try {
       const pattern = 'rate_limit:*';
       const keys = await this.redis.keys(pattern);

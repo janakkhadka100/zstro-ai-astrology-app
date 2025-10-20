@@ -4,12 +4,20 @@
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
 
-// Redis client configuration
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-});
+// Create Redis client only if REDIS_URL is available (for Vercel deployment)
+let redis: Redis | null = null;
+
+if (process.env.REDIS_URL) {
+  try {
+    redis = new Redis(process.env.REDIS_URL, {
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+  } catch (error) {
+    console.warn('Redis connection failed, caching disabled:', error);
+  }
+}
 
 // Cache configuration
 const CACHE_TTL = {
@@ -47,13 +55,15 @@ export function getUserSessionCacheKey(userId: string): string {
 
 // Generic cache operations
 export class CacheService {
-  private redis: Redis;
+  private redis: Redis | null;
 
   constructor() {
     this.redis = redis;
   }
 
   async get<T>(key: string): Promise<T | null> {
+    if (!this.redis) return null;
+    
     try {
       const value = await this.redis.get(key);
       return value ? JSON.parse(value) : null;
@@ -64,6 +74,8 @@ export class CacheService {
   }
 
   async set(key: string, value: any, ttl: number = 3600): Promise<boolean> {
+    if (!this.redis) return false;
+    
     try {
       await this.redis.setex(key, ttl, JSON.stringify(value));
       return true;
@@ -74,6 +86,8 @@ export class CacheService {
   }
 
   async del(key: string): Promise<boolean> {
+    if (!this.redis) return false;
+    
     try {
       await this.redis.del(key);
       return true;
@@ -84,6 +98,8 @@ export class CacheService {
   }
 
   async exists(key: string): Promise<boolean> {
+    if (!this.redis) return false;
+    
     try {
       const result = await this.redis.exists(key);
       return result === 1;
@@ -94,6 +110,8 @@ export class CacheService {
   }
 
   async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    if (!this.redis) return keys.map(() => null);
+    
     try {
       const values = await this.redis.mget(...keys);
       return values.map(value => value ? JSON.parse(value) : null);
@@ -104,6 +122,8 @@ export class CacheService {
   }
 
   async mset(keyValuePairs: Record<string, any>, ttl: number = 3600): Promise<boolean> {
+    if (!this.redis) return false;
+    
     try {
       const pipeline = this.redis.pipeline();
       for (const [key, value] of Object.entries(keyValuePairs)) {
@@ -141,6 +161,8 @@ export class CacheService {
 
   // Invalidate cache patterns
   async invalidatePattern(pattern: string): Promise<number> {
+    if (!this.redis) return 0;
+    
     try {
       const keys = await this.redis.keys(pattern);
       if (keys.length === 0) return 0;
@@ -154,6 +176,8 @@ export class CacheService {
 
   // Health check
   async healthCheck(): Promise<boolean> {
+    if (!this.redis) return false;
+    
     try {
       await this.redis.ping();
       return true;
@@ -264,6 +288,15 @@ export async function getCacheStats(): Promise<{
   hits: number;
   misses: number;
 }> {
+  if (!redis) {
+    return {
+      memory: 'Redis not available',
+      keys: 0,
+      hits: 0,
+      misses: 0,
+    };
+  }
+  
   try {
     const info = await redis.info('memory');
     const keyspace = await redis.info('keyspace');
