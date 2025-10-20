@@ -7,6 +7,7 @@ import { getChatHistory, getRecentEvents } from '@/lib/chat/memory';
 import { extractEvent } from '@/lib/ai/eventExtractor';
 import { learnFromMemories, MemoryInsights } from '@/lib/ai/learnFromMemories';
 import { getPlanetaryContext } from '@/lib/ai/planetaryContext';
+import { getTransitSummaryForContext } from '@/lib/ai/prompts-transit';
 
 /* ────────────────────────────────────────────────────────────────────────────
    Minimal utils
@@ -408,6 +409,22 @@ export async function getAstrologyPrompt(query: string): Promise<string> {
   const userGender = genderMatch?.[1]?.trim() && genderMatch[1] !== 'N/A' ? genderMatch[1].trim() : undefined;
   const greeting = makeGreeting(lang, userName, userGender);
 
+  // Add transit context if query mentions today/tomorrow/specific date
+  let transitContext = '';
+  if (query.includes('today') || query.includes('आज') || query.includes('आज') || 
+      query.includes('tomorrow') || query.includes('भोली') || query.includes('कल') ||
+      /\d{4}-\d{2}-\d{2}/.test(query)) {
+    try {
+      const response = await fetch('/api/transits/today');
+      const result = await response.json();
+      if (result.success) {
+        transitContext = getTransitSummaryForContext(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching transit context:', error);
+    }
+  }
+
   const greetOnceInstruction =
     lang === 'ne'
       ? `यदि यो च्याटको **पहिलो उत्तर** हो भने मात्र सुरुमा अभिवादन प्रयोग गर्नुहोस्: "${greeting}"। अन्यथा अभिवादन नलेख्नुहोस्।`
@@ -497,6 +514,8 @@ Safety rails:
 ${metaHeader}
 
 ${context}
+
+${transitContext}
 
 ${lang === 'ne' ? 'प्रश्न' : lang === 'hi' ? 'प्रश्न' : 'Question'}: ${query}
 
