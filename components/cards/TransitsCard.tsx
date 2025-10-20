@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Calendar, Clock, Star, MapPin, RefreshCw } from "lucide-react";
+import { getTransitLabels } from "@/lib/i18n/transit";
+import { useLang } from "@/hooks/useLang";
 
 interface TransitPlanet {
   planet: string;
@@ -42,6 +44,8 @@ export default function TransitsCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const { lang } = useLang();
+  const labels = getTransitLabels(lang);
 
   const fetchTransitData = async (date?: string) => {
     setLoading(true);
@@ -96,7 +100,7 @@ export default function TransitsCard() {
     return (
       <div id="card-transits" className="rounded-2xl p-4 bg-red-50 border border-red-200">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-red-800">Today's Transits</h3>
+          <h3 className="text-sm font-semibold text-red-800">{labels.title}</h3>
           <button
             onClick={handleRefresh}
             className="p-1 hover:bg-red-100 rounded transition-colors"
@@ -112,7 +116,7 @@ export default function TransitsCard() {
   if (!data) {
     return (
       <div id="card-transits" className="rounded-2xl p-4 bg-gray-50">
-        <p className="text-sm text-gray-600">No transit data available</p>
+        <p className="text-sm text-gray-600">{labels.noData}</p>
       </div>
     );
   }
@@ -126,7 +130,7 @@ export default function TransitsCard() {
         <div className="flex items-center space-x-2">
           <Calendar className="w-4 h-4 text-blue-600" />
           <h3 className="text-sm font-semibold text-gray-800">
-            Today's Transits
+            {labels.title}
           </h3>
         </div>
         <button
@@ -145,7 +149,7 @@ export default function TransitsCard() {
         </div>
         <div className="flex items-center space-x-1">
           <Clock className="w-3 h-3" />
-          <span>Age {age.years}y {age.months}m</span>
+          <span>{labels.age} {age.years}y {age.months}m</span>
         </div>
       </div>
 
@@ -157,7 +161,7 @@ export default function TransitsCard() {
 
       {/* Dasha Chain */}
       <div className="mb-3 p-2 bg-white/50 rounded-lg">
-        <div className="text-xs font-medium text-gray-700 mb-1">Current Dasha</div>
+        <div className="text-xs font-medium text-gray-700 mb-1">{labels.currentDasha}</div>
         <div className="text-xs text-gray-600">
           {dashaChain.maha} → {dashaChain.antar} → {dashaChain.pratyantar}
         </div>
@@ -165,7 +169,7 @@ export default function TransitsCard() {
 
       {/* Transit List */}
       <div className="space-y-2">
-        <div className="text-xs font-medium text-gray-700">Key Transits</div>
+        <div className="text-xs font-medium text-gray-700">{labels.keyTransits}</div>
         <ul className="space-y-1">
           {transits.slice(0, 8).map((transit, i) => (
             <li key={i} className="text-xs">
@@ -178,10 +182,10 @@ export default function TransitsCard() {
                 </div>
                 <div className="flex items-center space-x-1">
                   {transit.isPeriodRuler && (
-                    <Star className="w-3 h-3 text-yellow-500" title="Period Ruler" />
+                    <Star className="w-3 h-3 text-yellow-500" title={labels.periodRuler} />
                   )}
                   {transit.isBenefic && (
-                    <div className="w-2 h-2 bg-green-400 rounded-full" title="Benefic" />
+                    <div className="w-2 h-2 bg-green-400 rounded-full" title={labels.benefic} />
                   )}
                 </div>
               </div>
@@ -200,9 +204,9 @@ export default function TransitsCard() {
       {/* Period Rulers */}
       {periodRulers.length > 0 && (
         <div className="mt-3 p-2 bg-yellow-50 rounded-lg">
-          <div className="text-xs font-medium text-yellow-800 mb-1">Period Rulers</div>
+          <div className="text-xs font-medium text-yellow-800 mb-1">{labels.periodRulers}</div>
           <div className="text-xs text-yellow-700">
-            {periodRulers.join(", ")} - These planets have enhanced influence
+            {periodRulers.join(", ")} - {labels.enhancedInfluence}
           </div>
         </div>
       )}
@@ -210,7 +214,7 @@ export default function TransitsCard() {
       {/* Date Selector */}
       <div className="mt-3 pt-2 border-t border-blue-200">
         <div className="flex items-center space-x-2">
-          <label className="text-xs text-gray-600">Check another date:</label>
+          <label className="text-xs text-gray-600">{labels.checkAnotherDate}</label>
           <input
             type="date"
             value={selectedDate}
