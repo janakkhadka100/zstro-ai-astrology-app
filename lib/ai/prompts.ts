@@ -22,7 +22,7 @@ const log = (...a: any[]) => { if (isDev) console.log('[prompts]', ...a); };
 
 /* ── Language detection (NE/HI/EN) ────────────────────────────────────────── */
 /** Very small heuristic: if Devanagari present → try Hindi markers; else Nepali */
-function detectLanguage(text?: string | null): Lang {
+export function detectLanguage(text?: string | null): Lang {
   if (!text) return 'ne';
   const hasDevanagari = /[\u0900-\u097F]/.test(text);
   if (!hasDevanagari) return 'en';
@@ -507,6 +507,92 @@ ${firstAnswerTemplate}
 ${rails}
 `.trim();
 }
+
+/* ── Dasha interpretation prompt ────────────────────────────────────────────── */
+export const dashaInterpretationPrompt = (dashaData: any, queryDate: string, lang: Lang = 'en') => {
+  const langText = {
+    ne: {
+      title: '🕉️ बहु-स्तरीय दशा विश्लेषण',
+      intro: 'दिनांक',
+      maha: 'महादशा',
+      antar: 'अन्तरदशा', 
+      pratyantar: 'प्रत्यन्तरदशा',
+      sookshma: 'सूक्ष्मदशा',
+      pran: 'प्राणदशा',
+      analysis: 'विश्लेषण',
+      effects: 'प्रभाव',
+      remedies: 'उपाय',
+      prediction: 'भविष्यवाणी'
+    },
+    hi: {
+      title: '🕉️ बहु-स्तरीय दशा विश्लेषण',
+      intro: 'दिनांक',
+      maha: 'महादशा',
+      antar: 'अन्तरदशा',
+      pratyantar: 'प्रत्यन्तरदशा', 
+      sookshma: 'सूक्ष्मदशा',
+      pran: 'प्राणदशा',
+      analysis: 'विश्लेषण',
+      effects: 'प्रभाव',
+      remedies: 'उपाय',
+      prediction: 'भविष्यवाणी'
+    },
+    en: {
+      title: '🕉️ Multi-Level Dasha Analysis',
+      intro: 'Date',
+      maha: 'Maha Dasha',
+      antar: 'Antar Dasha',
+      pratyantar: 'Pratyantar Dasha',
+      sookshma: 'Sookshma Dasha', 
+      pran: 'Pran Dasha',
+      analysis: 'Analysis',
+      effects: 'Effects',
+      remedies: 'Remedies',
+      prediction: 'Prediction'
+    }
+  };
+
+  const t = langText[lang];
+
+  return `
+${t.title} — ${queryDate}
+
+${t.intro}: ${queryDate}
+
+**${t.maha}**: ${dashaData.summary?.maha || 'Unknown'} (Overall life theme)
+**${t.antar}**: ${dashaData.summary?.antar || 'Unknown'} (Situational direction)  
+**${t.pratyantar}**: ${dashaData.summary?.pratyantar || 'Unknown'} (Monthly trigger)
+**${t.sookshma}**: ${dashaData.summary?.sookshma || 'Unknown'} (Weekly mood/response)
+**${t.pran}**: ${dashaData.summary?.pran || 'Unknown'} (Momentary energy)
+
+${t.analysis}:
+Analyze how each dasha level modifies the others:
+
+1. **${t.maha}**: Sets the overall life theme and long-term direction
+2. **${t.antar}**: Influences situational changes and medium-term events  
+3. **${t.pratyantar}**: Affects monthly activities and short-term decisions
+4. **${t.sookshma}**: Influences weekly mood and immediate responses
+5. **${t.pran}**: Represents momentary energy and consciousness
+
+${t.effects}:
+- Explain the combined influence of all active dasha levels
+- Consider planetary strengths, aspects, and house positions
+- Analyze benefic/malefic combinations
+- Discuss timing for important activities
+
+${t.remedies}:
+- Suggest appropriate remedies based on active planets
+- Recommend favorable times for specific activities
+- Provide guidance for challenging planetary combinations
+
+${t.prediction}:
+- Give insights about upcoming opportunities or challenges
+- Suggest areas of focus during this period
+- Provide practical advice for navigating this dasha combination
+
+Remember: Each dasha level influences the others, creating a complex web of planetary energies that shape our experiences.
+`;
+};
 
 /* ── Update document prompt (unchanged) ───────────────────────────────────── */
 export const updateDocumentPrompt = () => {
