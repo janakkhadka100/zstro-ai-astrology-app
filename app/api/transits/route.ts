@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { activeContextStack, getDateContextStack } from "@/lib/astro/stack";
+import { validateTransitDate, validateUserData } from "@/lib/safety/transit";
 
 export const runtime = "nodejs";
 
@@ -21,19 +22,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Date parameter required" }, { status: 400 });
     }
 
-    // Validate date format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(date)) {
-      return NextResponse.json({ error: "Invalid date format. Use YYYY-MM-DD" }, { status: 400 });
-    }
-
-    // Validate date is not in the future beyond reasonable limit
-    const requestedDate = new Date(date);
-    const today = new Date();
-    const maxFutureDate = new Date(today.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year from now
-    
-    if (requestedDate > maxFutureDate) {
-      return NextResponse.json({ error: "Date cannot be more than 1 year in the future" }, { status: 400 });
+    // Validate date using safety rails
+    const dateValidation = validateTransitDate(date);
+    if (!dateValidation.valid) {
+      return NextResponse.json({ error: dateValidation.error }, { status: 400 });
     }
 
     const contextStack = await getDateContextStack(session.user.id, date);
@@ -66,19 +58,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Date parameter required" }, { status: 400 });
     }
 
-    // Validate date format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(date)) {
-      return NextResponse.json({ error: "Invalid date format. Use YYYY-MM-DD" }, { status: 400 });
-    }
-
-    // Validate date is not in the future beyond reasonable limit
-    const requestedDate = new Date(date);
-    const today = new Date();
-    const maxFutureDate = new Date(today.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year from now
-    
-    if (requestedDate > maxFutureDate) {
-      return NextResponse.json({ error: "Date cannot be more than 1 year in the future" }, { status: 400 });
+    // Validate date using safety rails
+    const dateValidation = validateTransitDate(date);
+    if (!dateValidation.valid) {
+      return NextResponse.json({ error: dateValidation.error }, { status: 400 });
     }
 
     const contextStack = await getDateContextStack(session.user.id, date);
