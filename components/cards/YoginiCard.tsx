@@ -2,6 +2,8 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { DashaNode } from "@/lib/astro-contract";
 import { useState } from "react";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 
 interface YoginiCardProps {
   title: string;
@@ -10,6 +12,8 @@ interface YoginiCardProps {
 
 export default function YoginiCard({ title, tree }: YoginiCardProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const { lang } = useLang();
+  const s = strings[lang];
 
   const toggleNode = (nodeId: string) => {
     const newExpanded = new Set(expandedNodes);
@@ -83,7 +87,7 @@ export default function YoginiCard({ title, tree }: YoginiCardProps) {
           </div>
         ) : (
           <div className="text-center text-teal-600 py-4">
-            No yogini dasha data available
+            {s.no_data}
           </div>
         )}
       </CardContent>

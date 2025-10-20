@@ -1,6 +1,8 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 
 interface SuggestCardProps {
   items: string[];
@@ -8,10 +10,13 @@ interface SuggestCardProps {
 }
 
 export default function SuggestCard({ items, onSuggestionClick }: SuggestCardProps) {
+  const { lang } = useLang();
+  const s = strings[lang];
+
   return (
     <Card id="card-suggest" className="rounded-2xl shadow-md bg-gradient-to-r from-purple-100 via-violet-100 to-indigo-100">
       <CardHeader className="text-center font-semibold text-purple-800">
-        Suggested Questions
+        {s.suggested_questions}
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-sm text-purple-700 text-center mb-4">
@@ -31,7 +36,7 @@ export default function SuggestCard({ items, onSuggestionClick }: SuggestCardPro
         </div>
         {(!items || items.length === 0) && (
           <div className="text-center text-purple-600 py-4">
-            No suggestions available
+            {s.no_data}
           </div>
         )}
       </CardContent>

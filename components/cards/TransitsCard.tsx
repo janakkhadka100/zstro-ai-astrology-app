@@ -1,12 +1,17 @@
 "use client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Transits } from "@/lib/astro-contract";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 
 interface TransitsCardProps {
   data: Transits;
 }
 
 export default function TransitsCard({ data }: TransitsCardProps) {
+  const { lang } = useLang();
+  const s = strings[lang];
+
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString();
@@ -18,12 +23,12 @@ export default function TransitsCard({ data }: TransitsCardProps) {
   return (
     <Card id="card-transits" className="rounded-2xl shadow-md bg-gradient-to-r from-cyan-100 via-sky-100 to-indigo-100">
       <CardHeader className="text-center font-semibold text-cyan-800">
-        Current Transits (Gochara)
+        {s.current_transits}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="bg-white/75 rounded-lg p-3">
           <div className="text-sm font-medium text-cyan-800 mb-2">
-            Date: {formatDate(data.date)}
+            {s.today}: {formatDate(data.date)}
           </div>
         </div>
 
@@ -50,7 +55,7 @@ export default function TransitsCard({ data }: TransitsCardProps) {
                   key={index}
                   className="px-2 py-1 bg-cyan-200 text-cyan-800 text-xs rounded-full"
                 >
-                  House {house}
+                  {s.house} {house}
                 </span>
               ))}
             </div>
@@ -59,7 +64,7 @@ export default function TransitsCard({ data }: TransitsCardProps) {
 
         {(!data.highlights?.length && !data.activeHouses?.length) && (
           <div className="text-center text-cyan-600 py-4">
-            No transit data available
+            {s.no_data}
           </div>
         )}
       </CardContent>

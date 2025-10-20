@@ -2,6 +2,8 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Charts } from "@/lib/astro-contract";
 import { useState } from "react";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 
 interface ChartsCardProps {
   charts: Charts;
@@ -9,11 +11,13 @@ interface ChartsCardProps {
 
 export default function ChartsCard({ charts }: ChartsCardProps) {
   const [activeTab, setActiveTab] = useState<"d1" | "d9">("d1");
+  const { lang } = useLang();
+  const s = strings[lang];
 
   return (
     <Card id="card-charts" className="rounded-2xl shadow-md bg-gradient-to-r from-violet-100 via-fuchsia-100 to-pink-100">
       <CardHeader className="text-center font-semibold text-violet-800">
-        Divisional Charts
+        {s.divisional_charts}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Tab Navigation */}
@@ -52,7 +56,7 @@ export default function ChartsCard({ charts }: ChartsCardProps) {
             ) : (
               <div className="text-center text-gray-500">
                 <div className="text-lg font-semibold mb-2">Rāśi Chart</div>
-                <div className="text-sm">No chart data available</div>
+                <div className="text-sm">{s.no_data}</div>
               </div>
             )
           ) : (
@@ -65,7 +69,7 @@ export default function ChartsCard({ charts }: ChartsCardProps) {
             ) : (
               <div className="text-center text-gray-500">
                 <div className="text-lg font-semibold mb-2">Navāṁśa Chart</div>
-                <div className="text-sm">No chart data available</div>
+                <div className="text-sm">{s.no_data}</div>
               </div>
             )
           )}

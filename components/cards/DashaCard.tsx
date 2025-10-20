@@ -2,6 +2,8 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { DashaNode } from "@/lib/astro-contract";
 import { useState } from "react";
+import { useLang } from "@/hooks/useLang";
+import { strings } from "@/utils/strings";
 
 interface DashaCardProps {
   title: string;
@@ -10,6 +12,8 @@ interface DashaCardProps {
 
 export default function DashaCard({ title, tree }: DashaCardProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const { lang } = useLang();
+  const s = strings[lang];
 
   const toggleNode = (nodeId: string) => {
     const newExpanded = new Set(expandedNodes);
@@ -83,7 +87,7 @@ export default function DashaCard({ title, tree }: DashaCardProps) {
           </div>
         ) : (
           <div className="text-center text-amber-600 py-4">
-            No dasha data available
+            {s.no_data}
           </div>
         )}
       </CardContent>
