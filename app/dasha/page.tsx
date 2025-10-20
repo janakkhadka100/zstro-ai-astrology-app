@@ -15,9 +15,17 @@ interface DashaHierarchy {
   };
 }
 
+interface DashaInterpretation {
+  interpretation: string;
+  language: string;
+  active_chain: any[];
+}
+
 export default function DashaPage() {
   const [hierarchy, setHierarchy] = useState<DashaHierarchy | null>(null);
+  const [interpretation, setInterpretation] = useState<DashaInterpretation | null>(null);
   const [loading, setLoading] = useState(false);
+  const [interpreting, setInterpreting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -42,6 +50,30 @@ export default function DashaPage() {
     }
   };
 
+  const fetchDashaInterpretation = async (date: string, query: string = "Please analyze this dasha combination and provide insights.") => {
+    setInterpreting(true);
+    
+    try {
+      const response = await fetch('/api/dasha/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, query })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setInterpretation(data.data);
+      } else {
+        console.error("Failed to get interpretation:", data.error);
+      }
+    } catch (err) {
+      console.error("Error fetching interpretation:", err);
+    } finally {
+      setInterpreting(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashaHierarchy(selectedDate);
   }, []);
@@ -49,6 +81,13 @@ export default function DashaPage() {
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
     fetchDashaHierarchy(newDate);
+    setInterpretation(null); // Clear previous interpretation
+  };
+
+  const handleGetInterpretation = () => {
+    if (hierarchy) {
+      fetchDashaInterpretation(selectedDate);
+    }
   };
 
   if (loading) {
@@ -106,6 +145,43 @@ export default function DashaPage() {
             hierarchy={hierarchy} 
             onDateChange={handleDateChange}
           />
+
+          {/* AI Interpretation */}
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">AI Interpretation</h3>
+              <button
+                onClick={handleGetInterpretation}
+                disabled={interpreting || !hierarchy}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {interpreting ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Analyzing...</span>
+                  </div>
+                ) : (
+                  "Get AI Analysis"
+                )}
+              </button>
+            </div>
+
+            {interpretation && (
+              <div className="prose max-w-none">
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
+                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                    {interpretation.interpretation}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!interpretation && !interpreting && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Click "Get AI Analysis" to receive personalized dasha interpretation</p>
+              </div>
+            )}
+          </div>
 
           {/* Quick Actions */}
           <div className="mt-8 bg-white rounded-lg p-6 border border-gray-200">

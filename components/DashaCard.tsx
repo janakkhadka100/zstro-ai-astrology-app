@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Calendar, Clock, Star } from "lucide-react";
+import { ChevronDown, ChevronRight, Calendar, Clock, Star, BarChart3 } from "lucide-react";
+import DashaTimeline from "./DashaTimeline";
 
 interface DashaPeriod {
   level: number;
@@ -172,6 +173,7 @@ function DashaSummary({ summary }: { summary: DashaHierarchy['summary'] }) {
 export default function DashaCard({ hierarchy, onDateChange }: DashaCardProps) {
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([1, 2]));
   const [selectedDate, setSelectedDate] = useState(hierarchy.date);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   const toggleLevel = (level: number) => {
     const newExpanded = new Set(expandedLevels);
@@ -189,13 +191,28 @@ export default function DashaCard({ hierarchy, onDateChange }: DashaCardProps) {
     onDateChange?.(newDate);
   };
 
+  const handleTimelineDateSelect = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    setSelectedDate(dateString);
+    onDateChange?.(dateString);
+  };
+
   return (
     <div className="space-y-6">
       {/* Date Selector */}
       <div className="bg-white rounded-lg p-4 border border-gray-200">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Date for Dasha Analysis
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Select Date for Dasha Analysis
+          </label>
+          <button
+            onClick={() => setShowTimeline(!showTimeline)}
+            className="flex items-center space-x-2 px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>{showTimeline ? 'Hide' : 'Show'} Timeline</span>
+          </button>
+        </div>
         <input
           type="date"
           value={selectedDate}
@@ -203,6 +220,15 @@ export default function DashaCard({ hierarchy, onDateChange }: DashaCardProps) {
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
+
+      {/* Timeline Visualization */}
+      {showTimeline && (
+        <DashaTimeline 
+          periods={hierarchy.all_periods}
+          selectedDate={new Date(selectedDate)}
+          onDateSelect={handleTimelineDateSelect}
+        />
+      )}
 
       {/* Summary */}
       <DashaSummary summary={hierarchy.summary} />
