@@ -1,73 +1,224 @@
 "use client";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Transits } from "@/lib/astro-contract";
-import { useLang } from "@/hooks/useLang";
-import { strings } from "@/utils/strings";
+import { useEffect, useState } from "react";
+import { Calendar, Clock, Star, MapPin, RefreshCw } from "lucide-react";
 
-interface TransitsCardProps {
-  data: Transits;
+interface TransitPlanet {
+  planet: string;
+  sign: string;
+  degree: number;
+  speed: number;
+  houseWS: number;
+  aspects: any[];
+  isPeriodRuler?: boolean;
+  isBenefic?: boolean;
 }
 
-export default function TransitsCard({ data }: TransitsCardProps) {
-  const { lang } = useLang();
-  const s = strings[lang];
+interface ActiveContextStack {
+  date: string;
+  age: {
+    years: number;
+    months: number;
+    days: number;
+  };
+  dashaChain: {
+    maha: string;
+    antar: string;
+    pratyantar: string;
+    sookshma: string;
+    pran: string;
+  };
+  transits: TransitPlanet[];
+  periodRulers: string[];
+  metadata: {
+    userId: string;
+    location: string;
+    timezone: string;
+    calculationTime: string;
+  };
+}
 
-  const formatDate = (dateString: string) => {
+export default function TransitsCard() {
+  const [data, setData] = useState<ActiveContextStack | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const fetchTransitData = async (date?: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return "Invalid Date";
+      const url = date ? `/api/transits?date=${date}` : '/api/transits/today';
+      const response = await fetch(url);
+      const result = await response.json();
+      
+      if (result.success) {
+        setData(result.data);
+      } else {
+        setError(result.error || "Failed to fetch transit data");
+      }
+    } catch (err) {
+      setError("Network error occurred");
+      console.error("Error fetching transit data:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchTransitData();
+  }, []);
+
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    fetchTransitData(newDate);
+  };
+
+  const handleRefresh = () => {
+    fetchTransitData(selectedDate);
+  };
+
+  if (loading) {
+    return (
+      <div id="card-transits" className="rounded-2xl p-4 bg-slate-100 animate-pulse h-32">
+        <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
+        <div className="h-3 bg-slate-200 rounded w-1/2 mb-4"></div>
+        <div className="space-y-2">
+          <div className="h-3 bg-slate-200 rounded w-full"></div>
+          <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+          <div className="h-3 bg-slate-200 rounded w-5/6"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div id="card-transits" className="rounded-2xl p-4 bg-red-50 border border-red-200">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-red-800">Today's Transits</h3>
+          <button
+            onClick={handleRefresh}
+            className="p-1 hover:bg-red-100 rounded transition-colors"
+          >
+            <RefreshCw className="w-4 h-4 text-red-600" />
+          </button>
+        </div>
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div id="card-transits" className="rounded-2xl p-4 bg-gray-50">
+        <p className="text-sm text-gray-600">No transit data available</p>
+      </div>
+    );
+  }
+
+  const { age, date, transits, dashaChain, periodRulers, metadata } = data;
+
   return (
-    <Card id="card-transits" className="rounded-2xl shadow-md bg-gradient-to-r from-cyan-100 via-sky-100 to-indigo-100">
-      <CardHeader className="text-center font-semibold text-cyan-800">
-        {s.current_transits}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-white/75 rounded-lg p-3">
-          <div className="text-sm font-medium text-cyan-800 mb-2">
-            {s.today}: {formatDate(data.date)}
+    <div id="card-transits" className="rounded-2xl p-4 bg-gradient-to-r from-blue-50 to-indigo-50 shadow">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <Calendar className="w-4 h-4 text-blue-600" />
+          <h3 className="text-sm font-semibold text-gray-800">
+            Today's Transits
+          </h3>
+        </div>
+        <button
+          onClick={handleRefresh}
+          className="p-1 hover:bg-blue-100 rounded transition-colors"
+        >
+          <RefreshCw className="w-4 h-4 text-blue-600" />
+        </button>
+      </div>
+
+      {/* Date and Age Info */}
+      <div className="flex items-center justify-between mb-3 text-xs text-gray-600">
+        <div className="flex items-center space-x-1">
+          <Calendar className="w-3 h-3" />
+          <span>{date}</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <Clock className="w-3 h-3" />
+          <span>Age {age.years}y {age.months}m</span>
+        </div>
+      </div>
+
+      {/* Location Info */}
+      <div className="flex items-center space-x-1 mb-3 text-xs text-gray-500">
+        <MapPin className="w-3 h-3" />
+        <span>{metadata.location} • {metadata.timezone}</span>
+      </div>
+
+      {/* Dasha Chain */}
+      <div className="mb-3 p-2 bg-white/50 rounded-lg">
+        <div className="text-xs font-medium text-gray-700 mb-1">Current Dasha</div>
+        <div className="text-xs text-gray-600">
+          {dashaChain.maha} → {dashaChain.antar} → {dashaChain.pratyantar}
+        </div>
+      </div>
+
+      {/* Transit List */}
+      <div className="space-y-2">
+        <div className="text-xs font-medium text-gray-700">Key Transits</div>
+        <ul className="space-y-1">
+          {transits.slice(0, 8).map((transit, i) => (
+            <li key={i} className="text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium text-gray-800">{transit.planet}</span>
+                  <span className="text-gray-600">in</span>
+                  <span className="font-medium text-gray-800">{transit.sign}</span>
+                  <span className="text-gray-500">(WS {transit.houseWS})</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {transit.isPeriodRuler && (
+                    <Star className="w-3 h-3 text-yellow-500" title="Period Ruler" />
+                  )}
+                  {transit.isBenefic && (
+                    <div className="w-2 h-2 bg-green-400 rounded-full" title="Benefic" />
+                  )}
+                </div>
+              </div>
+              {transit.aspects?.length > 0 && (
+                <div className="text-xs text-gray-500 ml-2">
+                  hits: {transit.aspects.map((aspect: any) => 
+                    `${aspect.natalPlanet} (${aspect.aspect})`
+                  ).join(", ")}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Period Rulers */}
+      {periodRulers.length > 0 && (
+        <div className="mt-3 p-2 bg-yellow-50 rounded-lg">
+          <div className="text-xs font-medium text-yellow-800 mb-1">Period Rulers</div>
+          <div className="text-xs text-yellow-700">
+            {periodRulers.join(", ")} - These planets have enhanced influence
           </div>
         </div>
+      )}
 
-        {data.highlights?.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-cyan-700">Today's Highlights:</div>
-            <ul className="space-y-1">
-              {data.highlights.map((highlight, index) => (
-                <li key={index} className="text-sm text-cyan-600 flex items-start">
-                  <span className="text-cyan-400 mr-2">•</span>
-                  {highlight}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {data.activeHouses?.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-cyan-700">Active Houses:</div>
-            <div className="flex flex-wrap gap-2">
-              {data.activeHouses.map((house, index) => (
-                <span 
-                  key={index}
-                  className="px-2 py-1 bg-cyan-200 text-cyan-800 text-xs rounded-full"
-                >
-                  {s.house} {house}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(!data.highlights?.length && !data.activeHouses?.length) && (
-          <div className="text-center text-cyan-600 py-4">
-            {s.no_data}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Date Selector */}
+      <div className="mt-3 pt-2 border-t border-blue-200">
+        <div className="flex items-center space-x-2">
+          <label className="text-xs text-gray-600">Check another date:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => handleDateChange(e.target.value)}
+            className="text-xs px-2 py-1 border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+    </div>
   );
 }
