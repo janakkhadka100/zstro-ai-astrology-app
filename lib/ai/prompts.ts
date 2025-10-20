@@ -4,17 +4,35 @@ import { ArtifactKind } from '@/components/artifact';
 import { auth } from '@/app/(auth)/auth';
 import { getAstroDataByUserIdAndType, getUserById } from '@/lib/db/queries';
 
-/* ── Language detection ───────────────────────────────────────────────────── */
-function detectLanguage(text?: string | null): 'ne' | 'en' {
+/* ────────────────────────────────────────────────────────────────────────────
+   Minimal utils
+──────────────────────────────────────────────────────────────────────────── */
+type Lang = 'ne' | 'hi' | 'en';
+
+function safeJson<T = any>(s?: string | null): T | null {
+  if (!s) return null;
+  try { return JSON.parse(s) as T; } catch { return null; }
+}
+const isDev = process.env.NODE_ENV !== 'production';
+const log = (...a: any[]) => { if (isDev) console.log('[prompts]', ...a); };
+
+/* ── Language detection (NE/HI/EN) ────────────────────────────────────────── */
+/** Very small heuristic: if Devanagari present → try Hindi markers; else Nepali */
+function detectLanguage(text?: string | null): Lang {
   if (!text) return 'ne';
-  return /[\u0900-\u097F]/.test(text) ? 'ne' : 'en';
+  const hasDevanagari = /[\u0900-\u097F]/.test(text);
+  if (!hasDevanagari) return 'en';
+
+  // Hindi common words (fallback is Nepali)
+  const hiHints = /(हूँ|है|हो|करना|कब|कौन|क्यों|लेकिन|सकता|सकती|यदि|तुम|आप)/;
+  return hiHints.test(text) ? 'hi' : 'ne';
 }
 
 /* ── Honorific by gender (first reply only) ───────────────────────────────── */
-function honorific(lang: 'ne' | 'en', gender?: string | null) {
+function honorific(lang: Lang, gender?: string | null) {
   const g = (gender || '').toLowerCase();
-  if (lang === 'ne') {
-    if (g.startsWith('f') || g.includes('female') || g.includes('महिला')) return 'म्याम';
+  if (lang === 'ne' || lang === 'hi') {
+    if (g.startsWith('f') || g.includes('female') || g.includes('महिला') || g.includes('स्त्री')) return lang === 'hi' ? 'मैडम' : 'म्याम';
     if (g.startsWith('m') || g.includes('male') || g.includes('पुरुष')) return 'सर';
     return '';
   }
@@ -22,73 +40,66 @@ function honorific(lang: 'ne' | 'en', gender?: string | null) {
 }
 
 /* ── Greeting (first reply only) ──────────────────────────────────────────── */
-function makeGreeting(lang: 'ne' | 'en', name?: string | null, gender?: string | null) {
+function makeGreeting(lang: Lang, name?: string | null, gender?: string | null) {
   const safeName = name?.trim();
   const h = honorific(lang, gender);
   if (lang === 'ne') return `🙏 नमस्ते${safeName ? `, ${safeName}${h ? ` ${h}` : ''}` : ''} —`;
+  if (lang === 'hi') return `🙏 नमस्ते${safeName ? `, ${safeName}${h ? ` ${h}` : ''}` : ''} —`;
   return `🙏 Namaste${safeName ? `, ${safeName}` : ''} —`;
 }
 
 /* ── GLOBAL ROLE PROMPT (strict, human tone) ─────────────────────────────── */
 export const textPrompt = `
 You are a seasoned Vedic astrologer who writes like a kind human mentor.
-Act like a professional astrologer and spiritual communication expert. Your task is to write astrological insights, horoscope readings, and spiritual guidance in a natural, human-like tone that feels authentic and empathetic — not robotic or generic. Your goal is to produce clear, kind, and insightful messages that resonate with real people and reflect genuine astrological wisdom.
+Act like a professional astrologer and spiritual communication expert. Your task is to write astrological insights, horoscope readings, and spiritual guidance in a natural, human-like tone that feels authentic and empathetic — not robotic or generic.
 
 LANGUAGE
-- Answer in the user's language (Nepali ↔ English).
+- Answer in the user's language (Nepali ↔ Hindi ↔ English).
 
-GREETING (GREET ONCE)
-- Include a warm greeting (🙏) only if this is the first assistant reply in the chat; otherwise don't greet again.
+GREET ONCE
+- Include 🙏 greeting only if this is the first assistant reply in the chat; otherwise don't greet again.
 
 HUMAN VOICE
 - Never say "as an AI/model". Be humble, compassionate, specific, and practical. Avoid clichés.
 
 DATA DISCIPLINE
-- Use ONLY the provided context (Prokerala-derived). If an item is missing, say "उपलब्ध छैन / not provided". Do NOT guess or re-derive.
+- Use ONLY the provided context (Prokerala-derived). If an item is missing, say "उपलब्ध छैन / उपलब्ध नहीं / not provided". Do NOT guess or re-derive.
 
 CALENDAR/PANCHANGA
-- Do NOT compute weekday, tithi, nakshatra, or Vikram Samvat yourself. Read them exactly from the context. If absent, say "उपलब्ध छैन / not provided".
+- Do NOT compute weekday, tithi, nakshatra, or Vikram Samvat yourself. Read them exactly from the context. If absent, say "not provided".
 
 DEPTH WITH CLARITY
-- Use Lagna, Moon sign, Whole-Sign houses, aspects (graha dṛṣṭi), verified yogas/doshas from the context’s checks, current daśā–bhukti, and relevant transits.
-- Use shad-bala or strength only if present; never invent numbers.
+- Use Lagna, Moon sign, Whole-Sign houses, aspects (graha dṛṣṭi), verified yogas/doshas from "checks", current daśā–bhukti, and relevant transits.
+- Use shad-bala/strength only if present; never invent numbers.
 
-DETERMINISTIC CLAIMS (NO FLIP-FLOP)
+DETERMINISTIC CLAIMS
 - Treat the context as the single source of truth.
-- For each yoga/dosha, follow this policy:
-  1) If "checks.yoga_proofs[i].present === true": You MAY say "present", and briefly cite the numeric proof (e.g., "Mars in Capricorn (own/exalt), WS 10th from Lagna").
-  2) If "present === false": You MUST say "not present" and show the blocking facts (e.g., "Mars in Sagittarius (not own/exalt), WS 8th").
-  3) If the yoga is missing from "checks.yoga_proofs": say "not evaluated in source data" rather than guessing.
-- Never re-interpret rules on your own. For Ruchaka specifically: require BOTH (i) Mars sign in {Aries, Scorpio, Capricorn} AND (ii) Mars WS-kendra from Asc in {1,4,7,10}. Otherwise state "not present" with the observed sign/house.
-- Output only one consistent verdict per yoga/dosha. No "technically yes/no" contradictions.
+- For each yoga/dosha:
+  1) If "present === true": you MAY say "present" with 1–line proof.
+  2) If "present === false": say "not present" with blocking facts.
+  3) If not listed: say "not evaluated in source data".
+- For Ruchaka: require BOTH sign∈{Aries,Scorpio,Capricorn} AND WS-kendra∈{1,4,7,10}; else "not present".
+- Output one consistent verdict; no flip-flop.
 
 REMEDIES
-- Calm and practical: habits and timing first; then mantra/daan if appropriate. No fear language. Gemstones only if explicitly supported.
-
-EXAMPLES / SHLOKA (OPTIONAL)
-- Public-figure examples only when clearly relevant; state "example, not a guarantee".
-- A short Sanskrit verse (≤2 lines) is okay; immediately add one-line meaning starting with "अर्थ:" or "Meaning:".
+- Practical first (habits/timing); then mantra/dāna if appropriate. No fear-language. Gemstones only if explicitly supported.
 
 STYLE
-- Natural paragraphs; minimal bullets (0–3). Keep it precise and kind, not verbose.
+- Natural paragraphs; 0–3 bullets max. Precise and kind.
 
 BIRTH DATA PIPE
-- If birth date/time/place is provided in chat, normalize and persist like signup, trigger Prokerala fetch, and analyze on the fresh dataset (including marriage/friend/business matching when requested).
+- If birth date/time/place is provided in chat, normalize and persist like signup, trigger Prokerala fetch, and analyze on the fresh dataset.
 
-STEP-BY-STEP TONE GUIDELINES (to keep language human and grounded)
-1) Use simple, natural language. Avoid heavy jargon. Example: say "Your Mars in Gemini makes you quick to express your thoughts."
-2) Avoid AI-like phrases and generic clichés (e.g., "embrace your journey", "unlock your potential"). Use warm, real-world language.
-3) Be direct and meaningful. Skip fillers. Example: "This is a good time to talk things through."
-4) Keep a conversational flow like a trusted astrologer speaking to a friend.
-5) Avoid exaggerated claims or supernatural hype. Be realistic and balanced.
-6) Be honest and compassionate. Never overpromise; it’s okay to acknowledge uncertainty.
-
-OUTPUT INTENT
-- Provide clear, gently reasoned astrology that answers the user's question first, then adds brief supporting analysis. Keep everything grounded strictly in the provided context.
+STEP-BY-STEP VOICE
+1) Simple, natural language.
+2) Avoid generic AI-phrases.
+3) Be direct and meaningful.
+4) Conversational like a trusted astrologer.
+5) Realistic; acknowledge uncertainty.
+6) Honest, compassionate, grounded.
 `;
 
-
-/* ── Not used for coding requests ─────────────────────────────────────────── */
+/* ── Not for coding requests ──────────────────────────────────────────────── */
 export const codePrompt = `
 You are not here to write software. If the request is code-related, politely steer back to astrology guidance grounded in chart data.
 `;
@@ -112,29 +123,26 @@ function toYMD(d: Date) {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
-
 type StrengthRow = { name: string; value: number };
 
-/* ── CONTEXT: pull kundli/planets/dasha + strict Calendar (no fallback math) ─ */
+/* ── CONTEXT: pull kundli/planets/dasha + strict Calendar ─────────────────── */
 export async function getAstrologyContext(): Promise<string> {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return '';
 
-  const kundliRaw: any = await getAstroDataByUserIdAndType({ userId, type: 'kundli' });
-  const planetRaw: any = await getAstroDataByUserIdAndType({ userId, type: 'planetPosition' });
-  const dashaRaw: any = await getAstroDataByUserIdAndType({ userId, type: 'dashaPeriods' });
+  const kundliRaw: any = await getAstroDataByUserIdAndType({ usersId: userId, type: 'kundli' });
+  const planetRaw: any = await getAstroDataByUserIdAndType({ usersId: userId, type: 'planetPosition' });
+  const dashaRaw: any = await getAstroDataByUserIdAndType({ usersId: userId, type: 'dashaPeriods' });
   const userDetail = await getUserById(userId);
 
   let kundliInfo = '';
   let mangalInfo = '';
-  let calendarBlock = '';           // ✅ ONLY calendar source we trust
-  // ❌ Removed loose panchanga “fallback” to prevent wrong weekday/tithi
+  let calendarBlock = '';
 
   try {
-    if (kundliRaw?.content?.kundliData) {
-      const parsed: any = JSON.parse(kundliRaw.content.kundliData);
-
+    const parsed: any = safeJson(kundliRaw?.content?.kundliData);
+    if (parsed) {
       const lagna = parsed?.zodiac?.name || 'N/A';
       const chandra = parsed?.chandra_rasi?.name || 'N/A';
       kundliInfo = `लग्न: ${lagna} | चन्द्र राशि: ${chandra}`;
@@ -143,32 +151,32 @@ export async function getAstrologyContext(): Promise<string> {
         mangalInfo = `🔥 मङ्गल दोष: ${parsed.mangal_dosha.description}`;
       }
 
-      // STRICT Calendar from payload (no calculations)
       try {
         const cal = parsed?.calendar || parsed?.panchanga?.calendar || null;
         if (cal) {
           const ab = cal?.at_birth || null;
           const sr = cal?.at_sunrise || null;
-          const letters = cal?.nakshatra_letters?.letters_ne || null;
+          const letters = cal?.nakshatra_letters?.letters_ne || cal?.nakshatra_letters?.letters_hi || null;
 
           const gBirth = ab?.gregorian?.date
-            ? `${ab.gregorian.date} (${ab.gregorian.weekday_ne || ab.gregorian.weekday_en || 'N/A'})`
+            ? `${ab.gregorian.date} (${ab.gregorian.weekday_ne || ab.gregorian.weekday_hi || ab.gregorian.weekday_en || 'N/A'})`
             : 'N/A';
           const vsBirth = ab?.vikram_samvat
-            ? `वि.सं. ${ab.vikram_samvat.year} ${ab.vikram_samvat.month_ne || ''} ${ab.vikram_samvat.day} (${ab.vikram_samvat.weekday_ne || 'N/A'})`
+            ? `वि.सं. ${ab.vikram_samvat.year} ${ab.vikram_samvat.month_ne || ab.vikram_samvat.month_hi || ''} ${ab.vikram_samvat.day} (${ab.vikram_samvat.weekday_ne || ab.vikram_samvat.weekday_hi || 'N/A'})`
             : 'N/A';
           const pBirth = ab?.panchanga
-            ? `तिथिः ${ab.panchanga.tithi?.name_ne ?? 'N/A'} | नक्षत्रः ${ab.panchanga.nakshatra?.name_ne ?? 'N/A'}${ab.panchanga.nakshatra?.pada ? ` (पाद ${ab.panchanga.nakshatra.pada})` : ''} | योगः ${ab.panchanga.yoga?.name_ne ?? 'N/A'} | करणः ${ab.panchanga.karana?.name_ne ?? 'N/A'}`
+            ? `तिथिः ${ab.panchanga.tithi?.name_ne ?? ab.panchanga.tithi?.name_hi ?? 'N/A'} | नक्षत्रः ${ab.panchanga.nakshatra?.name_ne ?? ab.panchanga.nakshatra?.name_hi ?? 'N/A'}${ab.panchanga.nakshatra?.pada ? ` (पाद ${ab.panchanga.nakshatra.pada})` : ''} | योगः ${ab.panchanga.yoga?.name_ne ?? ab.panchanga.yoga?.name_hi ?? 'N/A'} | करणः ${ab.panchanga.karana?.name_ne ?? ab.panchanga.karana?.name_hi ?? 'N/A'}`
             : 'N/A';
 
           const gSun = sr?.gregorian?.date
-            ? `${sr.gregorian.date} (${sr.gregorian.weekday_ne || sr.gregorian.weekday_en || 'N/A'})`
+            ? `${sr.gregorian.date} (${sr.gregorian.weekday_ne || sr.gregorian.weekday_hi || sr.gregorian.weekday_en || 'N/A'})`
             : 'N/A';
+          // BUGFIX: ensure correct ASCII 'vikram_samvat'
           const vsSun = sr?.vikram_samvat
-            ? `वि.सं. ${sr.vikрам_samvat.year} ${sr.vikрам_samvat.month_ne || ''} ${sr.vikram_samvat.day} (${sr.vikram_samvat.weekday_ne || 'N/A'})`
+            ? `वि.सं. ${sr.vikram_samvat.year} ${sr.vikram_samvat.month_ne || sr.vikram_samvat.month_hi || ''} ${sr.vikram_samvat.day} (${sr.vikram_samvat.weekday_ne || sr.vikram_samvat.weekday_hi || 'N/A'})`
             : 'N/A';
           const pSun = sr?.panchanga
-            ? `तिथिः ${sr.panchanga.tithi?.name_ne ?? 'N/A'} | नक्षत्रः ${sr.panchanga.nakshatra?.name_ne ?? 'N/A'}${sr.panchanga.nakshatra?.pada ? ` (पाद ${sr.panchanga.nakshatra.pada})` : ''} | योगः ${sr.panchanga.yoga?.name_ne ?? 'N/A'} | करणः ${sr.panchanga.karana?.name_ne ?? 'N/A'}`
+            ? `तिथिः ${sr.panchanga.tithi?.name_ne ?? sr.panchanga.tithi?.name_hi ?? 'N/A'} | नक्षत्रः ${sr.panchanga.nakshatra?.name_ne ?? sr.panchanga.nakshatra?.name_hi ?? 'N/A'}${sr.panchanga.nakshatra?.pada ? ` (पाद ${sr.panchanga.nakshatra.pada})` : ''} | योगः ${sr.panchanga.yoga?.name_ne ?? sr.panchanga.yoga?.name_hi ?? 'N/A'} | करणः ${sr.panchanga.karana?.name_ne ?? sr.panchanga.karana?.name_hi ?? 'N/A'}`
             : 'N/A';
 
           const nameLetters =
@@ -188,21 +196,17 @@ ${ab?.sunrise_local ? `- स्थानीय सूर्योदय: ${ab.su
 - पञ्चाङ्ग (सूर्योदय): ${pSun}
 ${nameLetters ? `\n${nameLetters}` : ''}`;
         }
-      } catch (e) {
-        console.error('❌ Calendar parse error', e);
-      }
+      } catch (e) { log('Calendar parse error', e); }
     }
-  } catch (err) {
-    console.error('❌ Kundli parse error', err);
-  }
+  } catch (err) { log('Kundli parse error', err); }
 
-  // Planet positions (sign/house/deg)
+  // Planet positions
   let planetInfo = '';
   try {
-    if (planetRaw?.content?.kundliData) {
-      const parsed: any = JSON.parse(planetRaw.content.kundliData);
+    const parsed: any = safeJson(planetRaw?.content?.kundliData);
+    if (parsed?.planet_position) {
       planetInfo =
-        parsed?.planet_position?.map((p: any) => {
+        parsed.planet_position.map((p: any) => {
           const name = p?.name || p?.planet || 'ग्रह';
           const rasi = p?.rasi?.name || p?.sign || 'N/A';
           const house = p?.house?.num ?? p?.house;
@@ -215,17 +219,15 @@ ${nameLetters ? `\n${nameLetters}` : ''}`;
           return `- ${name}: ${rasi}${house ? `, House ${house}` : ''}${deg}`;
         }).join('\n') || '';
     }
-  } catch (err) {
-    console.error('❌ Planet parse error', err);
-  }
+  } catch (err) { log('Planet parse error', err); }
 
-  // Shadbala (best-effort parse)
+  // Shadbala (best effort)
   let shadbalaInfo = '';
   try {
     const candidates: StrengthRow[] = [];
     const tryParse = (raw: any) => {
-      if (!raw?.content?.kundliData) return;
-      const obj: any = JSON.parse(raw.content.kundliData);
+      const obj: any = safeJson(raw?.content?.kundliData);
+      if (!obj) return;
       const rows =
         obj?.shad_bala || obj?.shadbala || obj?.planet_strength || obj?.strength || obj?.shadBala || null;
       if (Array.isArray(rows)) {
@@ -248,35 +250,29 @@ ${nameLetters ? `\n${nameLetters}` : ''}`;
       const label = (v: number) => (v >= 1.0 ? 'उत्कृष्ट' : v >= 0.8 ? 'बलियो' : v >= 0.6 ? 'मध्यम' : 'कमजोर');
       shadbalaInfo = candidates.slice(0, 7).map(c => `- ${c.name}: ${c.value.toFixed(2)} (${label(c.value)})`).join('\n') || '';
     }
-  } catch (err) {
-    console.error('❌ Shadbala parse error', err);
-  }
+  } catch (err) { log('Shadbala parse error', err); }
 
   // Dasha (current highlight)
   let dashaInfo = '';
   const today = new Date();
   try {
-    if (dashaRaw?.content?.kundliData) {
-      const parsed: any = JSON.parse(dashaRaw.content.kundliData);
-      const rows: any[] = parsed?.dasha_periods || [];
-      const lines: string[] = [];
-      let currentFound = false;
-      for (const d of rows) {
-        const s = new Date(d.start);
-        const e = new Date(d.end);
-        const isCurrent = today >= s && today <= e;
-        if (isCurrent) currentFound = true;
-        lines.push(`- ${isCurrent ? '🔷 ' : ''}${d.name} (${d.start} → ${d.end})${isCurrent ? '  ← वर्तमान महादशा' : ''}`);
-      }
-      dashaInfo = lines.slice(0, 8).join('\n');
-      if (!currentFound && rows.length) {
-        const upcoming = rows.find((d: any) => new Date(d.start) > today);
-        if (upcoming) dashaInfo += `\n- ⏭ आगामी: ${upcoming.name} (${upcoming.start} → ${upcoming.end})`;
-      }
+    const parsed: any = safeJson(dashaRaw?.content?.kundliData);
+    const rows: any[] = parsed?.dasha_periods || [];
+    const lines: string[] = [];
+    let currentFound = false;
+    for (const d of rows) {
+      const s = new Date(d.start);
+      const e = new Date(d.end);
+      const isCurrent = today >= s && today <= e;
+      if (isCurrent) currentFound = true;
+      lines.push(`- ${isCurrent ? '🔷 ' : ''}${d.name} (${d.start} → ${d.end})${isCurrent ? '  ← वर्तमान महादशा' : ''}`);
     }
-  } catch (err) {
-    console.error('❌ Dasha parse error', err);
-  }
+    dashaInfo = lines.slice(0, 8).join('\n');
+    if (!currentFound && rows.length) {
+      const upcoming = rows.find((d: any) => new Date(d.start) > today);
+      if (upcoming) dashaInfo += `\n- ⏭ आगामी: ${upcoming.name} (${upcoming.start} → ${upcoming.end})`;
+    }
+  } catch (err) { log('Dasha parse error', err); }
 
   const userDetails = `
 - User Profile Information:
@@ -315,70 +311,97 @@ export async function getAstrologyPrompt(query: string): Promise<string> {
   const userGender = genderMatch?.[1]?.trim() && genderMatch[1] !== 'N/A' ? genderMatch[1].trim() : undefined;
   const greeting = makeGreeting(lang, userName, userGender);
 
-  const greetOnceInstruction = lang === 'ne'
-    ? `यदि यो च्याटको **पहिलो उत्तर** हो भने मात्र सुरुमा अभिवादन प्रयोग गर्नुहोस्: "${greeting}"। अन्यथा अभिवादन नलेख्नुहोस्।`
-    : `Use this greeting only if this is the **first** assistant reply in the chat: "${greeting}". Otherwise do not greet.`;
+  const greetOnceInstruction =
+    lang === 'ne'
+      ? `यदि यो च्याटको **पहिलो उत्तर** हो भने मात्र सुरुमा अभिवादन प्रयोग गर्नुहोस्: "${greeting}"। अन्यथा अभिवादन नलेख्नुहोस्।`
+      : lang === 'hi'
+      ? `यदि यह चैट का **पहला उत्तर** है तभी शुरुआत में अभिवादन लिखें: "${greeting}"। अन्यथा अभिवादन न लिखें।`
+      : `Use this greeting only if this is the **first** assistant reply in the chat: "${greeting}". Otherwise do not greet.`;
 
-  const firstAnswerTemplate = lang === 'ne' ? `
+  const firstAnswerTemplate =
+    lang === 'ne'
+      ? `
 पहिलो अनुच्छेद (पहिलो उत्तरमा मात्र):
-- अभिवादन: “${greeting}”
-- “तपाईंको (जन्म मिति, समय, स्थान) अनुसार तपाईं हाल उमेर … वर्ष … महिना … दिन हुनुभएको छ।” — उमेर मात्र गणना गर्नुहोस्।
-- **Calendar सम्बन्धी बार/तिथि/नक्षत्र/वि.सं.** context को 📅 ब्लकमा भए मात्र दिनुहोस्; नभए “उपलब्ध छैन” भनी स्किप गर्नुहोस्।
-- “यस नक्षत्र–पाद अनुसार नामको पहिलो अक्षर/स्वर …; यसबाट चन्द्रराशी …” — calendar.nakshatra_letters भए मात्र।
+- अभिवादन: "${greeting}"
+- "तपाईंको (जन्म मिति, समय, स्थान) अनुसार तपाईं हाल उमेर … वर्ष … महिना … दिन हुनुभएको छ।" — उमेर मात्र गणना गर्नुहोस्।
+- **Calendar** सम्बन्धी बार/तिथि/नक्षत्र/वि.सं. context को 📅 ब्लकमा भए मात्र; नभए "उपलब्ध छैन"।
 
 दोस्रो अनुच्छेद:
-- “हाल … महादशा चलिरहेको छ। … देखि … सम्म … महादशा चल्नेछ।” (current + next)
-- सो दशाको ग्रह WS-कुन भावमा, मुख्य युति/दृष्टि, र बल (उपलब्ध भए) — १–२ वाक्यमा।
-- “यो घरबाट …; यो ग्रहबाट …” — छोटकरीमा।
+- "हाल … महादशा चलिरहेको छ। … देखि … सम्म … महादशा चल्नेछ।" (current + next)
+- WS-भाव, मुख्य युति/दृष्टि, बल (उपलब्ध भए) — १–२ वाक्य।
 
 तेस्रो भाग:
-- “तपाईंले सोध्नु भएको प्रश्न: ‘…’। विश्लेषण गर्दा …” — मानवीय, शास्त्रीय, बिना-हाइप।
+- "तपाईंले सोध्नु भएको प्रश्न: '…'। विश्लेषण गर्दा …" — मानवीय, शास्त्रीय, संक्षेप।
 
 अन्त्य:
-- 1–3 व्यावहारिक सुझाव (आवश्यक परे मात्र)।
-- अन्तिम लाइन: “यदि तपाईं चाहनुहुन्छ भने **यी वा तपाईंको मनमा लागेका कुनै पनि** प्रश्न सोध्न सक्नुहुन्छ — म तपाईंको कुण्डली अझ गहिराइमा अध्ययन गरेर उत्तर दिन तयार छु।” अनि ३ पूरक प्रश्न:
-  1) अहिलेको प्रश्नलाई अझ specific बनाउने
-  2) सफलता/उठानको समयका झ्यालहरू
-  3) राजयोग/विपरीत-राजयोग/युति/दोष (आवश्यक परे मिलान) विस्तृत
-`.trim() : `
+- 1–3 व्यावहारिक सुझाव (आवश्यक भएमा)।
+- अन्तिम: "यदि तपाईं चाहनुहुन्छ भने **यी वा तपाईंको मनका कुनै पनि** प्रश्न सोध्न सक्नुहुन्छ — म अझ गहिराइमा अध्ययन गरेर उत्तर दिन तयार छु।" अनि ३ पूरक प्रश्न।
+`.trim()
+      : lang === 'hi'
+      ? `
+पहला अनुच्छेद (सिर्फ पहले उत्तर में):
+- अभिवादन: "${greeting}"
+- आयु केवल गणना करें; पंचांग/वार/नक्षत्र स्वयं न निकालें — context में हो तो ही दें।
+
+दूसरा अनुच्छेद:
+- वर्तमान और आगामी महादशा; WS-भाव/दृष्टि/युति संक्षेप में।
+
+तीसरा:
+- उपयोगकर्ता के प्रश्न को दोहराएँ और स्पष्ट उत्तर दें—बिना अतिशयोक्ति।
+
+अंत:
+- 1–3 व्यावहारिक सुझाव (यदि ज़रूरी हो)।
+- समापन: "यदि चाहें तो **ये या मन के कोई भी** प्रश्न पूछ सकते हैं — मैं चार्ट को और गहराई से देखकर उत्तर दूँगा/गी।" साथ 3 follow-ups।
+`.trim()
+      : `
 First paragraph (first reply only):
-- Greeting: “${greeting}”
-- Compute only the age precisely; do **not** self-compute weekday/tithi/nakshatra/VS—use Calendar block if present, else say “not provided”.
-- Name initials from nakshatra-pada only if provided.
+- Greeting: "${greeting}"
+- Compute only the age; do NOT self-compute weekday/tithi/nakshatra/VS—use Calendar block if present.
 
 Second paragraph:
-- Current & next Mahadasha; WS house of lord, key conjunctions/aspects; strength if present.
+- Current & next Mahadasha; WS house, key conjunctions/aspects; strength if present.
 
 Third:
-- Restate the user’s question and answer clearly, without hype.
+- Restate the user's question and answer clearly.
 
 End:
-- 1–3 practical suggestions (only if needed).
-- Close: “If you wish, you may ask **these or any question on your mind** — I’m ready to study your chart more deeply.” with 3 follow-ups (specific version, success windows, yogas/doṣas & matching if relevant).
+- 1–3 practical suggestions if needed.
+- Close with 3 follow-up prompts for deeper reading.
 `.trim();
 
-  const rails = lang === 'ne' ? `
+  const rails =
+    lang === 'ne'
+      ? `
 सुरक्षा-नियम:
 - Whole-Sign प्राथमिक; Moon- र Asc-आधारित सन्दर्भ छुट्याउनुहोस्।
-- कुनै योग/दोष तभी लेख्नुहोस् जब context भित्र **checks.yoga_proofs / dosha_proofs** ले present=true/active=true देखाएको छ।
-- Calendar/पञ्चाङ्ग **context बाहिर कहिल्यै गणना नगर्नुहोस्**।
-`.trim() : `
+- योग/दोष केवल तब नै लेख्नुहोस् जब "checks" मा present=true/active=true।
+- Calendar/पञ्चाङ्ग context बाहिर कहिल्यै गणना नगर्नुहोस्।
+`.trim()
+      : lang === 'hi'
+      ? `
+सुरक्षा-नियम:
+- Whole-Sign प्राथमिक; Moon और Asc आधारित संदर्भ अलग रखें।
+- योग/दोष तभी बताएँ जब "checks" में present=true/active=true हो।
+- Calendar/Panchang context के बाहर कभी गणना न करें।
+`.trim()
+      : `
 Safety rails:
-- Prefer WS; keep Moon- vs Asc-based separate.
+- Prefer Whole-Sign; keep Moon- vs Asc-based references separate.
 - Mention yogas/doṣas only if context has explicit proofs present=true/active=true.
 - Never compute Calendar outside the context.
 `.trim();
 
-  const metaHeader = lang === 'ne'
-    ? `🕉️ ZSTRO ज्योतिष सल्लाह — ${today}`
-    : `🕉️ ZSTRO Astrology Advice — ${today}`;
+  const metaHeader =
+    lang === 'ne' ? `🕉️ ZSTRO ज्योतिष सल्लाह — ${today}` :
+    lang === 'hi' ? `🕉️ ZSTRO ज्योतिष सलाह — ${today}` :
+    `🕉️ ZSTRO Astrology Advice — ${today}`;
 
   return `
 ${metaHeader}
 
 ${context}
 
-${lang === 'ne' ? 'प्रश्न' : 'Question'}: ${query}
+${lang === 'ne' ? 'प्रश्न' : lang === 'hi' ? 'प्रश्न' : 'Question'}: ${query}
 
 ${greetOnceInstruction}
 
@@ -388,7 +411,7 @@ ${rails}
 `.trim();
 }
 
-/* ── Update document prompt ───────────────────────────────────────────────── */
+/* ── Update document prompt (unchanged) ───────────────────────────────────── */
 export const updateDocumentPrompt = () => {
   return `Provide answers as plain text in the user's question language; do not produce downloadable files/documents.`;
 };
