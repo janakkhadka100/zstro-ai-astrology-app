@@ -4,6 +4,7 @@
 import { buildTransitPayload, validatePayload } from "./payload";
 import { getUserById } from "@/lib/db/queries";
 import { DateTime } from "luxon";
+import { cacheTransitData, getCachedTransitData } from "@/lib/cache/transit";
 
 export interface TransitPlanet {
   planet: string;
@@ -59,6 +60,12 @@ export async function fetchTransitsForDate(userId: string, isoDate?: string): Pr
     throw new Error("Invalid date");
   }
 
+  // Check cache first
+  const cachedData = await getCachedTransitData(userId, date);
+  if (cachedData) {
+    return cachedData;
+  }
+
   // Build Prokerala payload
   const payload = buildTransitPayload({
     localDate: date,
@@ -94,7 +101,12 @@ export async function fetchTransitsForDate(userId: string, isoDate?: string): Pr
     const data = await response.json();
     
     // Normalize the transit data
-    return normalizeTransit(data, user.place.iana_tz, date);
+    const normalizedData = normalizeTransit(data, user.place.iana_tz, date);
+    
+    // Cache the result
+    await cacheTransitData(userId, date, normalizedData);
+    
+    return normalizedData;
 
   } catch (error) {
     console.error('Error fetching transits:', error);
