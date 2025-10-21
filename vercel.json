@@ -60,15 +60,5 @@
       "NEXT_TELEMETRY_DISABLED": "1"
     }
   },
-  "regions": ["iad1"],
-  "crons": [
-    {
-      "path": "/api/cron/transits",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/learn",
-      "schedule": "0 2 * * *"
-    }
-  ]
+  "regions": ["iad1"]
 }
