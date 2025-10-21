@@ -15,6 +15,7 @@ import AnalysisCard from "@/components/cards/AnalysisCard";
 import SuggestCard from "@/components/cards/SuggestCard";
 import PanchangCard from "@/components/cards/PanchangCard";
 import CalendarCard from "@/components/cards/CalendarCard";
+import HouseCalculationCard from "@/components/cards/HouseCalculationCard";
 import ChatComposer from "@/components/chat/ChatComposer";
 import UploadBox from "@/components/UploadBox";
 import SaveMenu from "@/components/SaveMenu";
@@ -101,6 +102,23 @@ export default function ChatView() {
             <DashaCard title="Vimshottari Dasha" tree={payload.vimshottari} />
             <YoginiCard title="Yogini Dasha" tree={payload.yogini} />
             <TransitsCard data={payload.transits} />
+            
+            {/* House Calculation Card */}
+            {payload.birth && payload.planets && (
+              <HouseCalculationCard
+                ascendant={payload.birth.ascSignLabel || payload.birth.ascSignId}
+                planets={payload.planets.reduce((acc, planet) => {
+                  acc[planet.planet] = planet.signLabel || planet.signId;
+                  return acc;
+                }, {} as Record<string, string | number>)}
+                dasha={payload.vimshottari?.current ? {
+                  mahadasha: payload.vimshottari.current.planet,
+                  antardasha: payload.vimshottari.current.antar?.[0]?.planet
+                } : undefined}
+                locale="ne-NP"
+              />
+            )}
+            
             <AnalysisCard text={payload.analysis} />
             <SuggestCard items={payload.suggestions} onSuggestionClick={handleSuggestionClick} />
             <div ref={unlockRef} /> {/* when visible -> enable chat */}
