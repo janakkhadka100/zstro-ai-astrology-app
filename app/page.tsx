@@ -508,16 +508,17 @@ const DockedChat: React.FC = () => {
 };
 
   // ---- Page -----------------------------------------------------------------
-  export default function ZstroHome() {
-    const { user, loading: authLoading, signIn, signOut } = useAuth();
-    const { language } = useTranslations();
-    const [astroLoading, setAstroLoading] = useState(false);
-    const [astroData, setAstroData] = useState<AstroSummary | null>(null);
-    const [astroError, setAstroError] = useState<string | null>(null);
-    const [networkInitialized, setNetworkInitialized] = useState(false);
+export default function ZstroHome() {
+  const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const { language } = useTranslations();
+  const [astroLoading, setAstroLoading] = useState(false);
+  const [astroData, setAstroData] = useState<AstroSummary | null>(null);
+  const [astroError, setAstroError] = useState<string | null>(null);
+  const [networkInitialized, setNetworkInitialized] = useState(false);
 
-    // Debug logging
-    console.log('🪐 [ZSTRO] ZstroHome render:', { user: !!user, authLoading, language, astroLoading, astroData: !!astroData });
+  // Debug logging
+  console.log('🪐 [ZSTRO] ZstroHome render:', { user: !!user, authLoading, language, astroLoading, astroData: !!astroData });
+  console.log('🌍 [ZSTRO] Production test - client-side JS is working!');
 
   // Initialize ZSTRO Network
   useEffect(() => {
