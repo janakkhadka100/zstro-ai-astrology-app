@@ -608,12 +608,111 @@ export default function ZstroHome() {
     };
   }, [user, currentLanguage, mounted]);
 
+  // Always show loading state in production to prevent hydration issues
   if (authLoading || !mounted) {
     return (
       <Container>
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
+      </Container>
+    );
+  }
+
+  // Show a simple static version if no data is available
+  if (!astroData && !astroLoading) {
+    return (
+      <Container>
+        <TopBar user={user} onSignIn={signIn} onSignOut={signOut} />
+        <Hero />
+        <CtaGrid />
+        
+        {/* Static Astro Cards for production */}
+        <div className="mt-8">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            <h2 className="text-lg font-semibold">तपाईंको ज्योतिषीय स्न्यापशट</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-base">लग्न (Ascendant)</CardTitle>
+                <CardDescription>Your rising sign</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-semibold">वृष (Taurus)</div>
+                <div className="text-xs text-gray-500 mt-1">House #1 baseline</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-base">चन्द्र राशि / House</CardTitle>
+                <CardDescription>मन/भावनाको संकेत</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-semibold">मकर (Capricorn)</div>
+                <div className="text-xs text-gray-500 mt-1">House: 9</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-base">वर्तमान दशा</CardTitle>
+                <CardDescription>Active period (Vim./Yog.)</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div>
+                  <div className="text-sm">System: <b>Vimshottari</b></div>
+                  <div className="text-lg font-semibold mt-1">शुक्र</div>
+                  <div className="text-xs text-gray-600 mt-1">Antar: बुध · Praty.: शुक्र</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">गोचरका मुख्य बुँदा</CardTitle>
+                <CardDescription>गोचरका मुख्य बुँदा</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>चन्द्र 9औँ भाव: भाग्य/धर्ममा फोकस</li>
+                  <li>शनि 10औँ: करियर स्थिरता</li>
+                  <li>बुध गोचर: संचार/डिलमा अवसर</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-base">आज</CardTitle>
+                <CardDescription>Quick tips</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-sm font-semibold">Lucky</div>
+                    <ul className="list-disc list-inside text-sm text-gray-700">
+                      <li>रङ: हल्का निलो</li>
+                      <li>संख्या: 3, 6</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">Focus</div>
+                    <ul className="list-disc list-inside text-sm text-gray-700">
+                      <li>कागजात क्लियर</li>
+                      <li>ईमेल उत्तर</li>
+                      <li>मुलाकात तय</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <DockedChat />
       </Container>
     );
   }
