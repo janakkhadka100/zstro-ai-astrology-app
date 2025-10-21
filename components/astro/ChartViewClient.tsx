@@ -104,10 +104,20 @@ export default function ChartViewClient({ data }: ChartViewClientProps) {
       'Ketu': '☋'
     };
 
+    // Calculate house positions for planets based on ascendant
+    const calculateHousePosition = (planetSignId: number, ascendantSignId: number): number => {
+      return ((planetSignId - ascendantSignId + 12) % 12) + 1;
+    };
+
     planets.forEach(planet => {
       if (planet.degree === null) return;
 
-      const planetAngle = (planet.degree - 90) * (Math.PI / 180); // Convert to radians, start from top
+      // Calculate house position relative to ascendant
+      const housePosition = calculateHousePosition(planet.signId, ascSignId);
+      
+      // Calculate angle based on house position (not degree)
+      const houseAngle = ((housePosition - 1) * 30) - 90; // Start from top, each house is 30 degrees
+      const planetAngle = (houseAngle * Math.PI) / 180;
       const planetRadius = radius - 80;
       const planetX = centerX + Math.cos(planetAngle) * planetRadius;
       const planetY = centerY + Math.sin(planetAngle) * planetRadius;
@@ -125,8 +135,8 @@ export default function ChartViewClient({ data }: ChartViewClientProps) {
       ctx.fillText(planet.planet, planetX, planetY + 20);
     });
 
-    // Draw ascendant line
-    const ascAngle = (0 - 90) * (Math.PI / 180); // Aries is at 0 degrees
+    // Draw ascendant line based on actual ascendant sign
+    const ascAngle = ((ascSignId - 1) * 30 - 90) * (Math.PI / 180); // Calculate angle based on ascendant sign
     ctx.strokeStyle = '#EF4444';
     ctx.lineWidth = 2;
     ctx.beginPath();

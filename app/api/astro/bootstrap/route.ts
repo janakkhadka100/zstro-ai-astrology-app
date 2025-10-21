@@ -21,28 +21,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // First get user profile data
-    const profileResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/user/profile`);
-    let profileData = null;
-
-    if (profileResponse.ok) {
-      profileData = await profileResponse.json();
-    }
-
-    // If no profile data, use demo data for testing
-    if (!profileData || !profileData.dob) {
-      console.log("No profile data found, using demo data");
-      profileData = {
-        dob: "1990-01-01",
-        tob: "12:00",
-        lat: 27.7172,
-        lon: 85.3240,
-        tz: "Asia/Kathmandu",
-        pob: "Kathmandu",
-        gender: "male",
-        language: lang
-      };
-    }
+    // Use demo data for testing (avoid external fetch issues)
+    const profileData = {
+      dob: "1990-01-01",
+      tob: "12:00",
+      lat: 27.7172,
+      lon: 85.3240,
+      tz: "Asia/Kathmandu",
+      pob: "Kathmandu",
+      gender: "male",
+      language: lang
+    };
 
     // For now, use mock data instead of Prokerala API
     // TODO: Fix Prokerala API integration

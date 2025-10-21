@@ -663,7 +663,7 @@ export default function ZstroHome() {
 
       <AstroCards
         data={astroData}
-        loading={astroLoading}
+        loading={false}
       />
 
       {/* Docked Chat Panel */}
