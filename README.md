@@ -1,4 +1,4 @@
-# ZSTRO AI Astrology Platform
+# 🚀 ZSTRO AI - Advanced Vedic Astrology Platform
 
 A comprehensive AI-powered astrology platform built with Next.js 15, featuring advanced Vedic astrology calculations, real-time chat consultations, and modern web technologies.
 
@@ -37,8 +37,8 @@ A comprehensive AI-powered astrology platform built with Next.js 15, featuring a
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-org/zstro-astrology.git
-   cd zstro-astrology
+   git clone https://github.com/janakkhadka100/zstro-ai-astrology-v2.git
+   cd zstro-ai-astrology-v2
    ```
 
 2. **Install dependencies**
@@ -47,66 +47,6 @@ A comprehensive AI-powered astrology platform built with Next.js 15, featuring a
    # or
    yarn install
    ```
-
-## 🚀 Deploy to Vercel
-
-### One-Click Deploy
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/zstro-astrology)
-
-### Manual Deployment
-
-1. **Install Vercel CLI**
-   ```bash
-   npm i -g vercel
-   ```
-
-2. **Link to Vercel project**
-   ```bash
-   npm run vercel:link
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   # Generate secrets
-   npx tsx scripts/gen-secrets.ts
-   
-   # Add to Vercel (Preview & Production)
-   vercel env add
-   ```
-
-4. **Deploy to Preview (Development-like)**
-   ```bash
-   npm run vercel:deploy
-   ```
-
-5. **Deploy to Production**
-   ```bash
-   npm run vercel:prod
-   ```
-
-### Environment Variables
-
-Copy `.env.example` to `.env.local` and fill in your values:
-
-```bash
-cp .env.example .env.local
-```
-
-Required variables:
-- `NEXTAUTH_SECRET` - Generate with `npx tsx scripts/gen-secrets.ts`
-- `OPENAI_API_KEY` - Your OpenAI API key
-- `PROKERALA_API_KEY` - Your Pokhrel API key
-- `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_URL` - Redis connection string (optional)
-
-### Vercel Configuration
-
-The project includes `vercel.json` with optimized settings:
-- Next.js framework detection
-- API function configuration
-- Security headers
-- Caching rules
-- Memory optimization
 
 3. **Set up environment variables**
    ```bash
@@ -154,10 +94,41 @@ The project includes `vercel.json` with optimized settings:
 6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+## 🚀 Deploy to Vercel
+
+### One-Click Deploy
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/janakkhadka100/zstro-ai-astrology-v2)
+
+### Manual Deployment
+
+1. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Link to Vercel project**
+   ```bash
+   vercel link
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   # Generate secrets
+   npx tsx scripts/gen-secrets.ts
+   
+   # Add to Vercel (Preview & Production)
+   vercel env add
+   ```
+
+4. **Deploy to Preview (Development-like)**
+   ```bash
+   vercel --prod
+   ```
+
 ## 📁 Project Structure
 
 ```
-zstro-astrology/
+zstro-ai-astrology-v2/
 ├── app/                    # Next.js app directory
 │   ├── (auth)/            # Authentication pages
 │   ├── (chat)/            # Chat and astrology pages
@@ -171,7 +142,7 @@ zstro-astrology/
 │   ├── astro/            # Astrology logic
 │   ├── db/               # Database schema and queries
 │   ├── services/         # Business logic services
-│   └── config/           # Configuration files
+│   └── zstro/            # Unified module exports
 ├── public/               # Static assets
 └── docs/                 # Documentation
 ```
@@ -189,16 +160,6 @@ zstro-astrology/
 | `REDIS_URL` | Redis connection string | No |
 | `KHALTI_SECRET_KEY` | Khalti payment gateway key | No |
 
-### Database Schema
-
-The application uses PostgreSQL with the following main tables:
-- `User` - User accounts and birth data
-- `Chat` - Chat sessions
-- `Message` - Chat messages
-- `AstrologicalData` - Cached astrology calculations
-- `Payment` - Payment transactions
-- `Subscription` - User subscriptions
-
 ## 🎯 API Endpoints
 
 ### Authentication
@@ -207,18 +168,15 @@ The application uses PostgreSQL with the following main tables:
 - `POST /api/auth/signout` - User sign out
 
 ### Astrology
-- `POST /api/astrology` - Get astrology reading
-- `GET /api/astrology` - Health check
+- `POST /api/astro` - Get astrology reading
+- `POST /api/dasha` - Calculate dasha periods
+- `POST /api/chat` - AI chat interface
 
 ### Payments
 - `POST /api/khalti/initiate` - Initiate Khalti payment
 - `POST /api/khalti/verify` - Verify Khalti payment
 - `POST /api/esewa/initiate` - Initiate eSewa payment
 - `POST /api/esewa/verify` - Verify eSewa payment
-
-### Privacy
-- `GET /api/privacy` - Get privacy policy
-- `POST /api/privacy` - Export/delete user data
 
 ## 🧪 Testing
 
@@ -324,8 +282,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Artifacts](docs/03-artifacts.md)
 
 ### Community
-- GitHub Issues: [Report bugs and request features](https://github.com/your-org/zstro-astrology/issues)
-- Discussions: [Community discussions](https://github.com/your-org/zstro-astrology/discussions)
+- GitHub Issues: [Report bugs and request features](https://github.com/janakkhadka100/zstro-ai-astrology-v2/issues)
+- Discussions: [Community discussions](https://github.com/janakkhadka100/zstro-ai-astrology-v2/discussions)
 
 ### Contact
 - Email: support@zstro.ai
