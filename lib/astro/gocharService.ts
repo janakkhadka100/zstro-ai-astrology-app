@@ -5,6 +5,12 @@ import { buildTransitPayload, validatePayload } from "./payload";
 import { getUserById } from "@/lib/db/queries";
 import { DateTime } from "luxon";
 import { cacheTransitData, getCachedTransitData } from "@/lib/cache/transit";
+import { 
+  fetchTransitPositions, 
+  calculateWholeSignHouse, 
+  isBeneficPlanet,
+  calculateTransitAspects 
+} from "@/lib/prokerala/transit";
 
 export interface TransitPlanet {
   planet: string;
@@ -81,28 +87,18 @@ export async function fetchTransitsForDate(userId: string, isoDate?: string): Pr
   }
 
   try {
-    // For now, return mock data to avoid circular dependencies
-    // TODO: Implement direct Prokerala API call
-    const mockTransitData = {
-      date,
-      planets: [
-        { planet: 'Sun', sign: 'Aries', degree: 15.5, speed: 1.0, houseWS: 1 },
-        { planet: 'Moon', sign: 'Cancer', degree: 120.3, speed: 13.0, houseWS: 4 },
-        { planet: 'Mars', sign: 'Gemini', degree: 75.2, speed: 0.5, houseWS: 3 },
-        { planet: 'Mercury', sign: 'Pisces', degree: 345.8, speed: 1.2, houseWS: 12 },
-        { planet: 'Jupiter', sign: 'Sagittarius', degree: 240.1, speed: 0.1, houseWS: 9 },
-        { planet: 'Venus', sign: 'Taurus', degree: 45.7, speed: 1.2, houseWS: 2 },
-        { planet: 'Saturn', sign: 'Aquarius', degree: 300.4, speed: 0.05, houseWS: 11 },
-        { planet: 'Rahu', sign: 'Scorpio', degree: 210.6, speed: -0.05, houseWS: 8 },
-        { planet: 'Ketu', sign: 'Taurus', degree: 30.6, speed: -0.05, houseWS: 2 }
-      ],
-      ascendant: { sign: 'Leo', degree: 150.0 },
-      location: user.place.place || 'Kathmandu, Nepal',
-      timezone: user.place.iana_tz
+    // Call Prokerala API for real transit positions
+    const transitParams = {
+      datetime: payload.datetime_utc,
+      coordinates: `${payload.lat},${payload.lon}`,
+      timezone: payload.tz_name,
+      place: user.place.place || 'Kathmandu, Nepal'
     };
+
+    const transitData = await fetchTransitPositions(transitParams);
     
     // Normalize the transit data
-    const normalizedData = normalizeTransit(mockTransitData, user.place.iana_tz, date);
+    const normalizedData = normalizeTransit(transitData, user.place.iana_tz, date);
     
     // Cache the result
     await cacheTransitData(userId, date, normalizedData);
@@ -124,20 +120,26 @@ export async function fetchTransitsForDate(userId: string, isoDate?: string): Pr
  */
 function normalizeTransit(raw: any, timezone: string, date: string): TransitData {
   const planets: TransitPlanet[] = [];
-  const ascendant = raw.ascendant || { sign: 'Unknown', degree: 0 };
+  const ascendant = raw.ascendant || { longitude: 0 };
+  
+  // Calculate ascendant sign from longitude
+  const ascSignId = Math.floor(ascendant.longitude / 30) + 1;
+  const ascSignLabel = getSignLabel(ascSignId);
   
   // Extract planetary positions
-  const transitPlanets = raw.transits || raw.planets || [];
+  const transitPlanets = raw.planets || [];
   
   for (const planet of transitPlanets) {
+    const houseWS = calculateWholeSignHouse(planet.longitude, ascendant.longitude);
+    
     const normalized: TransitPlanet = {
-      planet: planet.planet || planet.name || 'Unknown',
-      sign: planet.sign || planet.rasi?.name || 'Unknown',
-      degree: planet.degree || planet.deg || 0,
+      planet: planet.planet || 'Unknown',
+      sign: planet.rasiName || 'Unknown',
+      degree: planet.longitude || 0,
       speed: planet.speed || 0,
-      houseWS: calculateWholeSignHouse(planet.degree || 0, ascendant.degree || 0),
+      houseWS,
       aspects: [], // Will be calculated separately
-      isBenefic: isBeneficPlanet(planet.planet || planet.name)
+      isBenefic: isBeneficPlanet(planet.planet)
     };
     
     planets.push(normalized);
@@ -147,8 +149,8 @@ function normalizeTransit(raw: any, timezone: string, date: string): TransitData
     date,
     planets,
     ascendant: {
-      sign: ascendant.sign || 'Unknown',
-      degree: ascendant.degree || 0
+      sign: ascSignLabel,
+      degree: ascendant.longitude || 0
     },
     metadata: {
       location: raw.location || 'Unknown',
@@ -158,106 +160,16 @@ function normalizeTransit(raw: any, timezone: string, date: string): TransitData
   };
 }
 
-/**
- * Calculate Whole-Sign house from planet degree and ascendant degree
- * @param planetDegree - Planet's degree (0-360)
- * @param ascDegree - Ascendant's degree (0-360)
- * @returns House number (1-12)
- */
-function calculateWholeSignHouse(planetDegree: number, ascDegree: number): number {
-  const diff = (planetDegree - ascDegree + 360) % 360;
-  return Math.floor(diff / 30) + 1;
-}
 
 /**
- * Check if planet is benefic
- * @param planetName - Planet name
- * @returns True if benefic
+ * Get sign label from sign ID
+ * @param signId - Sign ID (1-12)
+ * @returns Sign label
  */
-function isBeneficPlanet(planetName: string): boolean {
-  const beneficPlanets = ['Jupiter', 'Venus', 'Mercury', 'Moon'];
-  return beneficPlanets.includes(planetName);
-}
-
-/**
- * Calculate aspects between transit planets and natal planets
- * @param transitPlanets - Current transit planets
- * @param natalPlanets - User's natal planets
- * @returns Array of aspects
- */
-export function calculateTransitAspects(
-  transitPlanets: TransitPlanet[],
-  natalPlanets: any[]
-): TransitAspect[] {
-  const aspects: TransitAspect[] = [];
-  
-  for (const transit of transitPlanets) {
-    for (const natal of natalPlanets) {
-      const orb = Math.abs(transit.degree - natal.degree);
-      const aspect = getAspectType(orb);
-      
-      if (aspect && orb <= getMaxOrb(aspect)) {
-        aspects.push({
-          natalPlanet: natal.planet || natal.name,
-          aspect,
-          orb,
-          strength: getAspectStrength(orb, aspect)
-        });
-      }
-    }
-  }
-  
-  return aspects;
-}
-
-/**
- * Determine aspect type from orb
- * @param orb - Orb in degrees
- * @returns Aspect type or null
- */
-function getAspectType(orb: number): string | null {
-  const normalizedOrb = orb % 360;
-  
-  if (normalizedOrb <= 8) return 'conjunction';
-  if (Math.abs(normalizedOrb - 180) <= 8) return 'opposition';
-  if (Math.abs(normalizedOrb - 120) <= 8) return 'trine';
-  if (Math.abs(normalizedOrb - 90) <= 8) return 'square';
-  if (Math.abs(normalizedOrb - 60) <= 8) return 'sextile';
-  
-  return null;
-}
-
-/**
- * Get maximum orb for aspect type
- * @param aspect - Aspect type
- * @returns Maximum orb in degrees
- */
-function getMaxOrb(aspect: string): number {
-  switch (aspect) {
-    case 'conjunction':
-    case 'opposition':
-      return 8;
-    case 'trine':
-    case 'square':
-      return 6;
-    case 'sextile':
-      return 4;
-    default:
-      return 2;
-  }
-}
-
-/**
- * Determine aspect strength from orb
- * @param orb - Orb in degrees
- * @param aspect - Aspect type
- * @returns Strength level
- */
-function getAspectStrength(orb: number, aspect: string): 'strong' | 'medium' | 'weak' {
-  const maxOrb = getMaxOrb(aspect);
-  const ratio = orb / maxOrb;
-  
-  if (ratio <= 0.5) return 'strong';
-  if (ratio <= 0.8) return 'medium';
-  return 'weak';
+function getSignLabel(signId: number): string {
+  const signs = [
+    'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+    'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+  ];
+  return signs[signId - 1] || 'Unknown';
 }

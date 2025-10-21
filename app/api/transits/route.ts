@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { activeContextStack, getDateContextStack } from "@/lib/astro/stack";
 import { validateTransitDate, validateUserData } from "@/lib/safety/transit";
+import { getRealtimeTransits } from "@/lib/astro/realtimeTransits";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,22 @@ export async function GET(req: NextRequest) {
     }
 
     const contextStack = await getDateContextStack(session.user.id, date);
+
+    // Check if we should use real-time updates
+    const useRealtime = searchParams.get('realtime') === 'true';
+    
+    if (useRealtime) {
+      // Use real-time transit data
+      const realtimeData = await getRealtimeTransits(session.user.id, date);
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...contextStack,
+          transits: realtimeData.planets,
+          realtime: true
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -65,6 +82,22 @@ export async function POST(req: NextRequest) {
     }
 
     const contextStack = await getDateContextStack(session.user.id, date);
+
+    // Check if we should use real-time updates
+    const useRealtime = searchParams.get('realtime') === 'true';
+    
+    if (useRealtime) {
+      // Use real-time transit data
+      const realtimeData = await getRealtimeTransits(session.user.id, date);
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...contextStack,
+          transits: realtimeData.planets,
+          realtime: true
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,
