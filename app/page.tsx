@@ -64,22 +64,20 @@ interface AstroSummary {
 // ---- Hooks (simplified for demo) ------------------------
 function useAuth() {
   const [user, setUser] = useState<{ name: string; email: string; photo?: string; id: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Simulate auth check - replace with real auth
     const checkAuth = async () => {
       try {
-        // For demo purposes, simulate a user after 1 second
-        setTimeout(() => {
-          setUser({
-            id: "demo-user-123",
-            name: "Demo User",
-            email: "demo@example.com",
-            photo: undefined
-          });
-          setLoading(false);
-        }, 1000);
+        // For demo purposes, simulate a user immediately
+        setUser({
+          id: "demo-user-123",
+          name: "Demo User",
+          email: "demo@example.com",
+          photo: undefined
+        });
+        setLoading(false);
       } catch (error) {
         console.error("Auth check failed:", error);
         setLoading(false);
