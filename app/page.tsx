@@ -278,7 +278,18 @@ const CtaGrid: React.FC = () => {
 
 const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 = ({ data, loading }) => {
-  const { t } = useTranslations();
+  // Simple translation function
+  const t = (key: string) => {
+    const translations: Record<string, string> = {
+      'ascendant': 'लग्न',
+      'lagna': 'लग्न',
+      'moonSign': 'चन्द्र राशि',
+      'currentDasha': 'वर्तमान दशा',
+      'transitHighlights': 'गोचरका मुख्य बुँदा',
+      'today': 'आज',
+    };
+    return translations[key] || key;
+  };
   
   console.log('🪐 [ZSTRO] AstroCards render:', { data: !!data, loading, dataKeys: data ? Object.keys(data) : null });
   
@@ -510,24 +521,32 @@ const DockedChat: React.FC = () => {
   // ---- Page -----------------------------------------------------------------
 export default function ZstroHome() {
   const { user, loading: authLoading, signIn, signOut } = useAuth();
-  const { language } = useTranslations();
   const [astroLoading, setAstroLoading] = useState(false);
   const [astroData, setAstroData] = useState<AstroSummary | null>(null);
   const [astroError, setAstroError] = useState<string | null>(null);
   const [networkInitialized, setNetworkInitialized] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [language, setLanguage] = useState('ne'); // Default to Nepali
 
   // Ensure component is mounted before rendering
   useEffect(() => {
     setMounted(true);
+    // Try to get language from localStorage or useTranslations
+    try {
+      const storedLang = localStorage.getItem('zstro_lang') || 'ne';
+      setLanguage(storedLang);
+    } catch (e) {
+      // Fallback if localStorage is not available
+      setLanguage('ne');
+    }
   }, []);
 
   // Debug logging
   console.log('🪐 [ZSTRO] ZstroHome render:', { user: !!user, authLoading, language, astroLoading, astroData: !!astroData, mounted });
   console.log('🌍 [ZSTRO] Production test - client-side JS is working!');
 
-  // Use fallback language if not available
-  const currentLanguage = language || 'ne';
+  // Use current language
+  const currentLanguage = language;
 
   // Initialize ZSTRO Network
   useEffect(() => {
