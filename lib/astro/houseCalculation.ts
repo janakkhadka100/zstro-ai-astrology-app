@@ -58,6 +58,29 @@ export function houseFrom(planetSignNum: number, ascSignNum: number): number {
   return ((planetSignNum - ascSignNum + 12) % 12) + 1;
 }
 
+// NEW: canonical sign lordships (Parāśara)
+const LORDSHIPS: Record<string, number[]> = {
+  "Sun":       [5],          // Leo
+  "Moon":      [4],          // Cancer
+  "Mars":      [1, 8],       // Aries, Scorpio
+  "Mercury":   [3, 6],       // Gemini, Virgo
+  "Jupiter":   [9, 12],      // Sagittarius, Pisces
+  "Venus":     [2, 7],       // Taurus, Libra
+  "Saturn":    [10, 11],     // Capricorn, Aquarius
+  // Rahu/Ketu: no sign ownership in classical view
+  "Rahu":      [],
+  "Ketu":      []
+};
+
+export function computeLordHouses(
+  planet: string,
+  ascSignNum: number
+): { lord_signs: number[]; lord_houses: number[] } {
+  const signs = LORDSHIPS[planet] ?? [];
+  const houses = signs.map(s => houseFrom(s, ascSignNum));
+  return { lord_signs: signs, lord_houses: houses };
+}
+
 export type PlanetsInput = Record<string, string | number>;
 
 export interface DashaContext {
@@ -78,6 +101,8 @@ export interface PlanetResult {
   rashi_num: number;
   house_num: number;
   house_name: string;
+  lord_signs: number[];        // e.g. [9,12] for Jupiter
+  lord_houses: number[];       // e.g. [8,11] for Taurus lagna
   note: string;
 }
 
@@ -113,6 +138,44 @@ export function buildAstroDerivePayload(
   };
 }
 
+// Build payload including placement + lordship
+export function buildAstroDerivePayloadWithLordship(
+  ascendant: string | number,
+  planets: PlanetsInput,
+  dasha?: DashaContext,
+  locale: "ne-NP" | "en" = "ne-NP"
+) {
+  const ascNum = toSignNum(ascendant);
+  const ascName = NUM_TO_SIGN[ascNum][locale === "ne-NP" ? "ne" : "en"];
+
+  const results = Object.entries(planets).map(([planet, signVal]) => {
+    const rashiNum = toSignNum(signVal);
+    const rashiName = NUM_TO_SIGN[rashiNum][locale === "ne-NP" ? "ne" : "en"];
+    const houseNum = houseFrom(rashiNum, ascNum);
+    const houseName = NUM_TO_HOUSE[houseNum][locale === "ne-NP" ? "ne" : "en"];
+
+    const { lord_signs, lord_houses } = computeLordHouses(planet, ascNum);
+
+    return {
+      planet,
+      rashi_name: rashiName,
+      rashi_num: rashiNum,
+      house_num: houseNum,       // placement
+      house_name: houseName,
+      lord_signs,                // e.g. [9,12] for Jupiter
+      lord_houses,               // e.g. [8,11] for Taurus lagna
+      note: ""
+    };
+  });
+
+  return {
+    ascendant: { name: ascName, num: ascNum, label: locale === "ne-NP" ? "लग्न" : "Ascendant" },
+    results,
+    dasha: dasha ?? {},
+    locale
+  };
+}
+
 export function calculateHouses(
   ascendant: string | number,
   planets: PlanetsInput,
@@ -127,12 +190,16 @@ export function calculateHouses(
     const houseNum = houseFrom(rashiNum, ascNum);
     const houseName = NUM_TO_HOUSE[houseNum][locale === "ne-NP" ? "ne" : "en"];
     
+    const { lord_signs, lord_houses } = computeLordHouses(planet, ascNum);
+    
     return {
       planet,
       rashi_name: rashiName,
       rashi_num: rashiNum,
       house_num: houseNum,
       house_name: houseName,
+      lord_signs,
+      lord_houses,
       note: "" // LLM will fill this
     };
   });

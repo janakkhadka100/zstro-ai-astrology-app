@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { 
   buildAstroDerivePayload, 
+  buildAstroDerivePayloadWithLordship,
   calculateHouses, 
   HouseCalculationRequest,
   HouseCalculationResponse 
@@ -42,8 +43,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Prepare LLM request
-    const llmRequest = buildAstroDerivePayload(ascendant, planets, dasha, locale);
+    // Prepare LLM request with lordship calculation
+    const llmRequest = buildAstroDerivePayloadWithLordship(ascendant, planets, dasha, locale);
 
     try {
       // Call LLM for detailed analysis

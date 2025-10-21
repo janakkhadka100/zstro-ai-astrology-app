@@ -9,6 +9,8 @@ interface PlanetResult {
   rashi_num: number;
   house_num: number;
   house_name: string;
+  lord_signs: number[];        // e.g. [9,12] for Jupiter
+  lord_houses: number[];       // e.g. [8,11] for Taurus lagna
   note: string;
 }
 
@@ -205,6 +207,14 @@ export default function HouseCalculationCard({
             <div className="text-xs text-gray-600 mb-1">
               {result.house_name}
             </div>
+            
+            {/* Lordship Information */}
+            {result.lord_houses.length > 0 && (
+              <div className="text-xs text-indigo-600 mb-1">
+                {locale === 'ne-NP' ? 'स्वामी घरहरू' : 'Lord Houses'}: {result.lord_houses.map(house => `${house}${locale === 'ne-NP' ? 'औँ' : 'th'}`).join(', ')}
+              </div>
+            )}
+            
             {result.note && (
               <div className="text-xs text-gray-700 italic">
                 {result.note}
