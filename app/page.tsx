@@ -515,10 +515,19 @@ export default function ZstroHome() {
   const [astroData, setAstroData] = useState<AstroSummary | null>(null);
   const [astroError, setAstroError] = useState<string | null>(null);
   const [networkInitialized, setNetworkInitialized] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Debug logging
-  console.log('🪐 [ZSTRO] ZstroHome render:', { user: !!user, authLoading, language, astroLoading, astroData: !!astroData });
+  console.log('🪐 [ZSTRO] ZstroHome render:', { user: !!user, authLoading, language, astroLoading, astroData: !!astroData, mounted });
   console.log('🌍 [ZSTRO] Production test - client-side JS is working!');
+
+  // Use fallback language if not available
+  const currentLanguage = language || 'ne';
 
   // Initialize ZSTRO Network
   useEffect(() => {
@@ -542,10 +551,12 @@ export default function ZstroHome() {
   }, [language, user]);
 
   useEffect(() => {
-    let mounted = true;
+    if (!mounted) return; // Don't run until component is mounted
+    
+    let isActive = true;
     
     (async () => {
-      console.log('🪐 [ZSTRO] useEffect triggered:', { user: !!user, language });
+      console.log('🪐 [ZSTRO] useEffect triggered:', { user: !!user, language: currentLanguage, mounted });
       
       console.log('🪐 [ZSTRO] Starting astro data fetch...');
       setAstroLoading(true);
@@ -554,31 +565,31 @@ export default function ZstroHome() {
       
       try {
         const userId = user?.id || 'demo-user-123';
-        const res = await fetchAstroSummary(userId, language);
+        const res = await fetchAstroSummary(userId, currentLanguage);
         console.log('🪐 [ZSTRO] API response received:', res);
-        if (mounted) {
+        if (isActive) {
           setAstroData(res);
           console.log('🪐 [ZSTRO] Astro data set successfully');
         }
       } catch (error) {
         console.error("🪐 [ZSTRO] Failed to fetch astro data:", error);
-        if (mounted) {
+        if (isActive) {
           setAstroData(null);
           setAstroError(error instanceof Error ? error.message : 'Failed to load astro data');
         }
       } finally {
-        if (mounted) {
+        if (isActive) {
           setAstroLoading(false);
           console.log('🪐 [ZSTRO] Loading state cleared');
         }
       }
     })();
     return () => {
-      mounted = false;
+      isActive = false;
     };
-  }, [user, language]);
+  }, [user, currentLanguage, mounted]);
 
-  if (authLoading) {
+  if (authLoading || !mounted) {
     return (
       <Container>
         <div className="flex items-center justify-center min-h-screen">
@@ -600,14 +611,14 @@ export default function ZstroHome() {
         <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="text-sm text-red-600">
             <strong>Failed to load astro data:</strong> {astroError}
-          </div>
+      </div>
           <button
             onClick={() => window.location.reload()}
             className="mt-2 text-xs text-red-500 hover:text-red-700 underline"
           >
             Retry
           </button>
-        </div>
+    </div>
       )}
 
       <AstroCards
