@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --turbo",
+    "prebuild": "npm run typecheck || echo 'Type check failed, continuing...'",
     "build": "next build",
     "start": "next start",
     "lint": "next lint && biome lint --write --unsafe",
