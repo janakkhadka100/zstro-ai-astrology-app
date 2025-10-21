@@ -313,7 +313,8 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
       </div>
     );
   }
-         if (!data) {
+  
+  if (!data) {
            return (
              <div className="mt-8">
                <div className="mb-3 flex items-center gap-2">
