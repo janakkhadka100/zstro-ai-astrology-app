@@ -79,22 +79,15 @@ export default function ChatView() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-sky-50 to-rose-50">
-      {/* Fixed Panchang and Calendar in top-right corner */}
-      <div className="fixed top-20 right-4 z-20 space-y-3 w-80 hidden lg:block">
-        <PanchangCard />
-        <CalendarCard />
-      </div>
-
-      {/* Mobile Panchang and Calendar - shown at top on mobile */}
-      <div className="lg:hidden px-4 py-3 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <PanchangCard />
-          <CalendarCard />
-        </div>
-      </div>
 
       {/* Cards area (scrollable) */}
       <main className="flex-1 overflow-y-auto px-4 py-5 mx-auto w-full max-w-3xl space-y-5">
+        {/* Panchang and Calendar at the top */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <PanchangCard />
+          <CalendarCard />
+        </div>
+
         <UploadBox onUploaded={handleUploaded} />
 
         {!payload ? (
