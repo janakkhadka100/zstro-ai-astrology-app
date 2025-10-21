@@ -415,13 +415,17 @@ export async function getAstrologyPrompt(query: string): Promise<string> {
       query.includes('tomorrow') || query.includes('भोली') || query.includes('कल') ||
       /\d{4}-\d{2}-\d{2}/.test(query)) {
     try {
-      const response = await fetch('/api/transits/today');
-      const result = await response.json();
-      if (result.success) {
-        transitContext = getTransitSummaryForContext(result.data);
+      // Only fetch transit context in browser environment
+      if (typeof window !== 'undefined') {
+        const response = await fetch('/api/transits/today');
+        const result = await response.json();
+        if (result.success) {
+          transitContext = getTransitSummaryForContext(result.data);
+        }
       }
     } catch (error) {
       console.error('Error fetching transit context:', error);
+      // Continue without transit context if fetch fails
     }
   }
 
