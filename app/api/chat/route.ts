@@ -1,131 +1,76 @@
 // app/api/chat/route.ts
-// Cards-first chat API with missing data detection
+// ZSTRO AI Chat API Endpoint
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ChatRequest, ChatResponse } from '@/lib/astrology/types';
-// Fallback simple prompt builder to avoid missing module imports during build
-const buildCombinedPrompt = (lang: string, cards: any, question: string) => {
-  const system = `[${lang}] Astrology Advisor`;
-  const user = `Q: ${question}\nCards: ${Object.keys(cards||{}).join(', ')}`;
-  return { system, user, combined: `${system}\n${user}` };
-};
-const isDataNeededResponse = (_text: string) => false;
-const extractDataNeededFromResponse = (_text: string) => [] as string[];
-import { detectMissingData, createFetchPlansFromKeys, getDataNeededMessage, getDataUpdatedMessage } from '@/lib/llm/missing-detector';
-import { fetchScopedData } from '@/lib/source/prokerala';
-const mergeAstroData = (base: any, patch: any) => ({ ...base, ...(patch || {}) });
+import { openai } from '@/lib/ai/openaiClient';
+import { getSystemPrompt } from '@/lib/ai/prompts';
 
-export const runtime = 'nodejs';
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json() as ChatRequest;
-    const { q: question, lang, cards, fetchMissing = true } = body;
-    
-    // Validate request
-    if (!question || !lang || !cards) {
+    const body = await request.json();
+    const { message, userId, chatHistory = [], lang = 'ne' } = body;
+
+    if (!message || !userId) {
       return NextResponse.json(
-        { success: false, errors: ['Question, language, and cards are required'] },
+        { error: 'Missing required parameters: message, userId' },
         { status: 400 }
       );
     }
-    
-    if (!['ne', 'en'].includes(lang)) {
-      return NextResponse.json(
-        { success: false, errors: ['Invalid language. Must be "ne" or "en"'] },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`Processing chat request: "${question}" in ${lang}`);
-    
-    // Build prompt from cards
-    const { system, user, combined } = buildCombinedPrompt(lang, cards, question);
-    
-    // Simulate LLM response (in production, this would call actual LLM)
-    let analysis = `Based on the provided cards, here's the analysis:\n\n${user}\n\n[LLM analysis would be generated here using the above prompt]`;
-    
-    // Check if data is needed
-    let dataNeeded: string[] = [];
-    let cardsUpdated = false;
-    let updatedCards = cards;
-    
-    if (fetchMissing) {
-      // Detect missing data from question
-      const missingPlans = detectMissingData(question, cards);
-      
-      if (missingPlans.length > 0) {
-        console.log(`Missing data detected, fetching: ${missingPlans.map(p => p.kind).join(', ')}`);
-        
-        try {
-          // Fetch missing data
-          const patch = await fetchScopedData(cards.profile || {}, missingPlans, lang);
-          
-          // Merge with existing cards
-          updatedCards = mergeAstroData(cards, patch);
-          cardsUpdated = true;
-          
-          // Re-build prompt with updated cards
-          const { user: updatedUser } = buildCombinedPrompt(lang, updatedCards, question);
-          analysis = `Based on the updated cards, here's the analysis:\n\n${updatedUser}\n\n[LLM analysis would be generated here using the updated prompt]`;
-          
-          console.log(`Data fetch completed. Updated cards with: ${patch.provenance?.prokerala.join(', ')}`);
-        } catch (error) {
-          console.error('Error fetching missing data:', error);
-          analysis += `\n\nNote: Some additional data could not be fetched. Analysis based on available cards only.`;
-        }
+
+    // Get system prompt for ZSTRO AI
+    const systemPrompt = getSystemPrompt(lang as 'en' | 'ne');
+
+    // Prepare messages for OpenAI
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      ...chatHistory.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        role: 'user',
+        content: message
       }
-    }
-    
-    // Check if LLM response indicates more data needed
-    if (isDataNeededResponse(analysis)) {
-      dataNeeded = extractDataNeededFromResponse(analysis);
-      console.log(`LLM requested additional data: ${dataNeeded.join(', ')}`);
-    }
-    
-    const response: ChatResponse = {
-      success: true,
-      analysis,
-      dataNeeded: dataNeeded.length > 0 ? dataNeeded : undefined,
-      cardsUpdated,
-      warnings: []
-    };
-    
-    // Add warnings if no basic data available
-    if (cards.d1.length === 0) {
-      response.warnings?.push('No D1 planets available for analysis');
-    }
-    
-    return NextResponse.json(response, { 
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
+    ];
+
+    // Call OpenAI API
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: messages as any,
+      max_tokens: 1000,
+      temperature: 0.7,
+      stream: false
     });
-    
+
+    const aiResponse = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+
+    return NextResponse.json({
+      success: true,
+      response: aiResponse,
+      timestamp: new Date().toISOString(),
+      model: 'gpt-4'
+    });
+
   } catch (error) {
-    console.error('Chat API error:', error);
-    
+    console.error('Chat API Error:', error);
     return NextResponse.json(
       { 
-        success: false, 
-        errors: ['Internal server error'],
-        analysis: 'Analysis failed due to server error'
+        error: 'Failed to process chat message',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
   }
 }
 
-// Handle OPTIONS for CORS
-export async function OPTIONS(req: NextRequest) {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    message: 'ZSTRO AI Chat API',
+    version: '1.0.0',
+    supportedLanguages: ['en', 'ne'],
+    usage: 'POST with message, userId, chatHistory, lang'
   });
 }

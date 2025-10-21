@@ -10,6 +10,8 @@ import BirthCards from "@/components/astro/BirthCards";
 import { getString, type Lang } from "@/lib/utils/i18n";
 import { isFeatureEnabled } from "@/lib/config/features";
 import { getHouseSignificance, isKendra, isKona, isTrik } from "@/lib/astrology/derive";
+import { verifyHouseFormula } from "@/lib/ai/house-verification";
+import { ZstroNetworkStatus } from "@/lib/zstro";
 
 interface AstroCardsProps {
   lang?: Lang;
@@ -41,28 +43,84 @@ export default function AstroCards({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/astro/bootstrap", { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang }) 
-      });
+      // Verify house calculation formula first
+      console.log('🧪 [ZSTRO] Verifying house calculation formula...');
+      const houseFormulaValid = verifyHouseFormula();
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!houseFormulaValid) {
+        console.warn('⚠️ [ZSTRO] House calculation formula verification failed');
       }
+
+      // Check network status
+      const networkStatus = ZstroNetworkStatus.getInstance();
+      if (!networkStatus.isHealthy()) {
+        const failedModules = networkStatus.getFailedModules();
+        console.warn(`⚠️ [ZSTRO] Some modules failed: ${failedModules.join(', ')}`);
+      }
+
+      // First get user profile data
+      const profileResponse = await fetch("/api/user/profile");
+      let profileData = null;
       
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json();
+        profileData = profile;
+      }
+
+      // If no profile data, use demo data for testing
+      if (!profileData || !profileData.dob) {
+        console.log("No profile data found, using demo data");
+        profileData = {
+          dob: "1990-01-01",
+          tob: "12:00",
+          lat: 27.7172,
+          lon: 85.3240,
+          tz: "Asia/Kathmandu",
+          pob: "Kathmandu"
+        };
+      }
+
+      // Try new unified API first
+      let response;
+      try {
+        response = await fetch("/api/astro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...profileData,
+            lang
+          })
+        });
+      } catch (apiError) {
+        console.log("New API failed, falling back to bootstrap API");
+        response = await fetch("/api/astro/bootstrap", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...profileData,
+            lang
+          })
+        });
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
       const json = await response.json();
-      
+
       // Race condition guard - only update if this is still the latest request
       if (currentRequestId === requestId) {
-        setData(json.data);
+        setData(json.data || json);
+        console.log('✅ [ZSTRO] Astro data loaded successfully');
       }
     } catch (error) {
       console.error("Error fetching astro data:", error);
       if (currentRequestId === requestId) {
         setError(
-          error instanceof Error 
-            ? error.message 
+          error instanceof Error
+            ? error.message
             : getString("dataLoadFailed", lang)
         );
       }
