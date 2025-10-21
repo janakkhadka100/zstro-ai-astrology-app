@@ -48,8 +48,7 @@ export const authConfig = {
       }
 
       if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+        return true; // Allow access to main page without authentication
       }
 
       if (isLoggedIn) {
