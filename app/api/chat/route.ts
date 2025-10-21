@@ -11,10 +11,12 @@ export async function POST(request: NextRequest) {
     const { message, userId, chatHistory = [], lang = 'ne' } = body;
 
     if (!message || !userId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing required parameters: message, userId' },
         { status: 400 }
       );
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      return response;
     }
 
     // Get system prompt for ZSTRO AI
@@ -47,30 +49,36 @@ export async function POST(request: NextRequest) {
 
     const aiResponse = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
-    return NextResponse.json({
+    const nextResponse = NextResponse.json({
       success: true,
       response: aiResponse,
       timestamp: new Date().toISOString(),
       model: 'gpt-4'
     });
+    nextResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return nextResponse;
 
   } catch (error) {
     console.error('Chat API Error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         error: 'Failed to process chat message',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return response;
   }
 }
 
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
+  const response = NextResponse.json({
     message: 'ZSTRO AI Chat API',
     version: '1.0.0',
     supportedLanguages: ['en', 'ne'],
     usage: 'POST with message, userId, chatHistory, lang'
   });
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  return response;
 }

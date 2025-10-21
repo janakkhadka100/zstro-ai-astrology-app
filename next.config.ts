@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
+  reactStrictMode: true,
   // Vercel optimizations
   output: 'standalone',
   trailingSlash: false,
@@ -62,6 +63,15 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
           },
         ],
       },

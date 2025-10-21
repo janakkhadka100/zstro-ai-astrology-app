@@ -11,10 +11,12 @@ export async function POST(request: NextRequest) {
     const { dob, tob, lat, lon, tz, lang = 'ne' } = body;
 
     if (!dob || !tob || !lat || !lon || !tz) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing required parameters: dob, tob, lat, lon, tz' },
         { status: 400 }
       );
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      return response;
     }
 
     // Fetch astro data from Prokerala
@@ -41,21 +43,25 @@ export async function POST(request: NextRequest) {
       astroData.d1 = enhancedPlanets;
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: astroData,
       timestamp: new Date().toISOString()
     });
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return response;
 
   } catch (error) {
     console.error('Astro API Error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         error: 'Failed to fetch astro data',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return response;
   }
 }
 

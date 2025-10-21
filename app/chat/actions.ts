@@ -5,10 +5,10 @@ import { AstroPayload, createSkeletonPayload, normalizePlanetRow, normalizeDasha
 export async function getAstroPayload(userId: string): Promise<AstroPayload> {
   try {
     // Try to fetch from existing API
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/astro/bootstrap`, {
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/astro/simple`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId })
+      body: JSON.stringify({ userId, lang: 'ne' })
     });
 
     if (!response.ok) {

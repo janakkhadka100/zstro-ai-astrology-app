@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Astro API</title>
+</head>
+<body>
+    <h1>Debug Astro API</h1>
+    <div id="status">Loading...</div>
+    <div id="data"></div>
+    
+    <script>
+        async function testAPI() {
+            const status = document.getElementById('status');
+            const data = document.getElementById('data');
+            
+            try {
+                status.textContent = 'Calling API...';
+                const response = await fetch('/api/astro/simple', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: 'demo-user-123', lang: 'ne' })
+                });
+                
+                status.textContent = `API Status: ${response.status}`;
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    data.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    const errorText = await response.text();
+                    data.innerHTML = '<pre>Error: ' + errorText + '</pre>';
+                }
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+                data.innerHTML = '<pre>' + error.stack + '</pre>';
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>

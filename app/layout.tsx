@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
+// Force dynamic rendering and disable caching
+export const dynamic = "force-dynamic";
+
 import { ThemeProvider } from '@/components/theme-provider';
-// LangProvider removed; using simple localStorage-based hook where needed
+import { LanguageProvider } from '@/lib/i18n/context';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -113,21 +116,23 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-              <Toaster position="top-center" />
-              {children}
-            </main>
-            <Footer />
-          </div>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-1">
+                <Toaster position="top-center" />
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

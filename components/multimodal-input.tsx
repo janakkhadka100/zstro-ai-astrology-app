@@ -203,11 +203,10 @@ function PureMultimodalInput({
 
       <input
         type="file"
-        className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
+        className="fixed -top-4 -left-4 size-0.5 opacity-0"
         ref={fileInputRef}
         multiple
         onChange={handleFileChange}
-        tabIndex={-1}
       />
 
       {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -273,16 +272,7 @@ function PureMultimodalInput({
   );
 }
 
-export const MultimodalInput = memo(
-  PureMultimodalInput,
-  (prevProps, nextProps) => {
-    if (prevProps.input !== nextProps.input) return false;
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (!equal(prevProps.attachments, nextProps.attachments)) return false;
-
-    return true;
-  },
-);
+export const MultimodalInput = PureMultimodalInput;
 
 function PureAttachmentsButton({
   fileInputRef,
@@ -306,7 +296,7 @@ function PureAttachmentsButton({
   );
 }
 
-const AttachmentsButton = memo(PureAttachmentsButton);
+const AttachmentsButton = PureAttachmentsButton;
 
 function PureStopButton({
   stop,
@@ -329,7 +319,7 @@ function PureStopButton({
   );
 }
 
-const StopButton = memo(PureStopButton);
+const StopButton = PureStopButton;
 
 function PureSendButton({
   submitForm,
@@ -354,9 +344,4 @@ function PureSendButton({
   );
 }
 
-const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
-  if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
-    return false;
-  if (prevProps.input !== nextProps.input) return false;
-  return true;
-});
+const SendButton = PureSendButton;

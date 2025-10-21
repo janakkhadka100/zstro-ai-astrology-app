@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering and disable caching
+export const dynamic = "force-dynamic";
+
 import React from "react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +29,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { initializeZstroNetwork } from "@/lib/zstro";
+import { useTranslations } from "@/lib/i18n/context";
 // Note: These imports are used in server-side functions only
 // import { auth } from "@/app/(auth)/auth";
 // import { getUserById } from "@/lib/db/queries";
@@ -61,47 +65,34 @@ interface AstroSummary {
   todayTips?: { title: string; items: string[] }[];
 }
 
-// ---- Hooks (simplified for demo) ------------------------
-function useAuth() {
-  const [user, setUser] = useState<{ name: string; email: string; photo?: string; id: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  // ---- Hooks (simplified for demo) ------------------------
+  function useAuth() {
+    const [user, setUser] = useState<{ name: string; email: string; photo?: string; id: string } | null>({
+      id: "demo-user-123",
+      name: "Demo User",
+      email: "demo@example.com",
+      photo: undefined
+    });
+    const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Simulate auth check - replace with real auth
-    const checkAuth = async () => {
-      try {
-        // For demo purposes, simulate a user immediately
-        setUser({
-          id: "demo-user-123",
-          name: "Demo User",
-          email: "demo@example.com",
-          photo: undefined
-        });
-        setLoading(false);
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setLoading(false);
-      }
+    return {
+      user,
+      loading,
+      signIn: () => window.location.href = "/login",
+      signOut: () => window.location.href = "/api/auth/signout",
     };
-    checkAuth();
-  }, []);
+  }
 
-  return {
-    user,
-    loading,
-    signIn: () => window.location.href = "/login",
-    signOut: () => window.location.href = "/api/auth/signout",
-  };
-}
-
-async function fetchAstroSummary(userId: string): Promise<AstroSummary> {
+async function fetchAstroSummary(userId: string, lang: string = 'ne'): Promise<AstroSummary> {
   try {
-    // Call real API endpoint
-    const response = await fetch(`/api/astro-summary?userId=${userId}`, {
-      method: 'GET',
+    const response = await fetch('/api/astro/simple', {
+      method: 'POST',
+      cache: 'no-store',
+      next: { revalidate: 0 },
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ userId, lang })
     });
 
     if (!response.ok) {
@@ -114,7 +105,34 @@ async function fetchAstroSummary(userId: string): Promise<AstroSummary> {
       throw new Error(result.error);
     }
 
-    return result;
+    // Transform the response to match AstroSummary interface
+    const currentDasha = result.vimshottari?.find((d: any) => d.isCurrent);
+    
+    return {
+      ascendant: { 
+        name: result.overview?.asc || 'Unknown', 
+        num: result.overview?.ascSignId || 0 
+      },
+      moon: { 
+        sign: result.overview?.moon || 'Unknown', 
+        house: result.planets?.find((p: any) => p.planet === 'Moon')?.house 
+      },
+      currentDasha: currentDasha ? {
+        system: "Vimshottari" as const,
+        maha: currentDasha.name,
+        antara: "Unknown",
+        pratyantara: "Unknown"
+      } : null,
+      transitHighlights: [
+        "चन्द्र 9औँ भाव: भाग्य/धर्ममा फोकस",
+        "शनि 10औँ: करियर स्थिरता",
+        "बुध गोचर: संचार/डिलमा अवसर",
+      ],
+      todayTips: [
+        { title: "Lucky", items: ["रङ: हल्का निलो", "संख्या: 3, 6"] },
+        { title: "Focus", items: ["कागजात क्लियर", "ईमेल उत्तर", "मुलाकात तय"] },
+      ],
+    };
   } catch (error) {
     console.error("Failed to fetch astro summary:", error);
     
@@ -153,13 +171,15 @@ const TopBar: React.FC<{
   onSignIn: () => void;
   onSignOut: () => void;
 }> = ({ user, onSignIn, onSignOut }) => {
+  const { t } = useTranslations();
+  
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-semibold shadow-sm">Z</div>
         <div>
           <div className="text-xl font-semibold tracking-tight">ZSTRO AI</div>
-          <div className="text-xs text-gray-500">AI Jyotish Services from Nepal</div>
+          <div className="text-xs text-gray-500">{t('welcome')}</div>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -181,10 +201,10 @@ const TopBar: React.FC<{
                 month: 'long',
                 day: 'numeric'
               })}
-            </div>
           </div>
         </div>
-        
+      </div>
+
         {user ? (
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
@@ -192,12 +212,12 @@ const TopBar: React.FC<{
               <AvatarFallback>{user.name?.slice(0, 2)?.toUpperCase() || "U"}</AvatarFallback>
             </Avatar>
             <Button variant="secondary" className="rounded-xl" onClick={onSignOut}>
-              <LogOut className="mr-2 h-4 w-4" /> Sign out
+              <LogOut className="mr-2 h-4 w-4" /> {t('signOut')}
             </Button>
           </div>
         ) : (
           <Button className="rounded-xl" onClick={onSignIn}>
-            <LogIn className="mr-2 h-4 w-4" /> Sign in
+            <LogIn className="mr-2 h-4 w-4" /> {t('signIn')}
           </Button>
         )}
       </div>
@@ -205,33 +225,39 @@ const TopBar: React.FC<{
   );
 };
 
-const Hero: React.FC = () => (
-  <div className="text-center py-14">
-    <motion.h1
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="text-2xl md:text-3xl font-semibold"
-    >
-      Welcome to ZSTRO AI !
-    </motion.h1>
-    <motion.p
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.1 }}
-      className="mt-2 text-gray-600"
-    >
-      ZSTRO AI is the AI Jyotish services from Nepal.
-    </motion.p>
-  </div>
-);
+const Hero: React.FC = () => {
+  const { t } = useTranslations();
+  
+  return (
+    <div className="text-center py-14">
+      <motion.h1
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-2xl md:text-3xl font-semibold"
+      >
+        {t('welcome')}
+      </motion.h1>
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="mt-2 text-gray-600"
+      >
+        ZSTRO AI is the AI Jyotish services from Nepal.
+      </motion.p>
+    </div>
+  );
+};
 
 const CtaGrid: React.FC = () => {
+  const { t } = useTranslations();
+  
   const items = [
-    { title: "What does your birth chart reveal?", desc: "Get your personalized horoscope based on your birth details.", icon: Stars },
-    { title: "How will your day be?", desc: "Read your daily horoscope for insights and guidance.", icon: CalendarDays },
+    { title: t('generateKundali'), desc: "Get your personalized horoscope based on your birth details.", icon: Stars },
+    { title: t('horoscope'), desc: "Read your daily horoscope for insights and guidance.", icon: CalendarDays },
     { title: "What does the future hold for you?", desc: "Discover predictions on career, love, health, and finance.", icon: Compass },
-    { title: "Need astrological solutions?", desc: "Consult experts for remedies to your problems.", icon: ShieldCheck },
+    { title: t('remedies'), desc: "Consult experts for remedies to your problems.", icon: ShieldCheck },
   ];
               return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -252,22 +278,39 @@ const CtaGrid: React.FC = () => {
 
 const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 = ({ data, loading }) => {
+  const { t } = useTranslations();
+  
+  console.log('🪐 [ZSTRO] AstroCards render:', { data: !!data, loading, dataKeys: data ? Object.keys(data) : null });
+  
   if (loading) {
     return (
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className="rounded-2xl">
-            <CardContent className="p-6">
-              <div className="h-4 w-24 bg-gray-200 rounded mb-3 animate-pulse" />
-              <div className="h-3 w-40 bg-gray-100 rounded mb-2 animate-pulse" />
-              <div className="h-3 w-32 bg-gray-100 rounded animate-pulse" />
+      <div className="mt-8">
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-sm">
+          ⏳ Loading astro data...
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="rounded-2xl">
+              <CardContent className="p-6">
+                <div className="h-4 w-24 bg-gray-200 rounded mb-3 animate-pulse" />
+                <div className="h-3 w-40 bg-gray-100 rounded mb-2 animate-pulse" />
+                <div className="h-3 w-32 bg-gray-100 rounded animate-pulse" />
                   </CardContent>
                 </Card>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="text-sm text-blue-600">
+          ℹ️ No astro data available. Component rendered but data is null.
+        </div>
+      </div>
+    );
+  }
 
   const tips = data.todayTips ?? [];
 
@@ -275,12 +318,12 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
     <div className="mt-8">
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-5 w-5" />
-        <h2 className="text-lg font-semibold">Your Astro Snapshot</h2>
+        <h2 className="text-lg font-semibold">तपाईंको ज्योतिषीय स्न्यापशट</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-base">Ascendant (लग्न)</CardTitle>
+            <CardTitle className="text-base">{t('ascendant')} ({t('lagna')})</CardTitle>
             <CardDescription>Your rising sign</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -291,7 +334,7 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-base">Moon Sign / House</CardTitle>
+            <CardTitle className="text-base">{t('moonSign')} / House</CardTitle>
             <CardDescription>मन/भावनाको संकेत</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -302,7 +345,7 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-base">Current Dasha</CardTitle>
+            <CardTitle className="text-base">{t('currentDasha')}</CardTitle>
             <CardDescription>Active period (Vim./Yog.)</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -320,7 +363,7 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 
         <Card className="rounded-2xl md:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Transit Highlights</CardTitle>
+            <CardTitle className="text-base">{t('transitHighlights')}</CardTitle>
             <CardDescription>गोचरका मुख्य बुँदा</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -334,7 +377,7 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-base">Today</CardTitle>
+            <CardTitle className="text-base">{t('today')}</CardTitle>
             <CardDescription>Quick tips</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -359,6 +402,7 @@ const AstroCards: React.FC<{ data: AstroSummary | null; loading: boolean }>
 };
 
 const DockedChat: React.FC = () => {
+  const { t } = useTranslations();
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -377,9 +421,11 @@ const DockedChat: React.FC = () => {
     setSending(true);
 
     try {
-      // Call your chat API
+      // Call your chat API with no-cache
       const response = await fetch('/api/chat', {
         method: 'POST',
+        cache: 'no-store',
+        next: { revalidate: 0 },
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...messages, userMessage].map(m => ({
@@ -417,7 +463,7 @@ const DockedChat: React.FC = () => {
             <div className="space-y-3">
               {messages.length === 0 && (
                 <div className="text-center text-sm text-gray-500 py-6">
-                  Ask anything about your kundali, dasha, or remedies…
+                  {t('askQuestion')} {t('kundali')}, {t('dasha')}, {t('remedies')}…
                 </div>
               )}
               {messages.map((m, i) => (
@@ -433,7 +479,7 @@ const DockedChat: React.FC = () => {
           <Separator />
           <div className="p-3 flex items-center gap-2">
             <Input
-              placeholder="Send a message…"
+              placeholder={t('typeMessage')}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -442,8 +488,9 @@ const DockedChat: React.FC = () => {
                   send();
                 }
               }}
-              className="rounded-xl"
+              className="rounded-xl pointer-events-auto"
               disabled={sending}
+              readOnly={false}
             />
             <Button onClick={send} className="rounded-xl" disabled={sending || !text.trim()}>
               {sending ? (
@@ -451,7 +498,7 @@ const DockedChat: React.FC = () => {
               ) : (
                 <MessageSquareText className="mr-2 h-4 w-4" />
               )}
-              Send
+              {t('sendMessage')}
             </Button>
           </div>
         </div>
@@ -460,12 +507,17 @@ const DockedChat: React.FC = () => {
   );
 };
 
-// ---- Page -----------------------------------------------------------------
-export default function ZstroHome() {
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
-  const [astroLoading, setAstroLoading] = useState(true);
-  const [astroData, setAstroData] = useState<AstroSummary | null>(null);
-  const [networkInitialized, setNetworkInitialized] = useState(false);
+  // ---- Page -----------------------------------------------------------------
+  export default function ZstroHome() {
+    const { user, loading: authLoading, signIn, signOut } = useAuth();
+    const { language } = useTranslations();
+    const [astroLoading, setAstroLoading] = useState(false);
+    const [astroData, setAstroData] = useState<AstroSummary | null>(null);
+    const [astroError, setAstroError] = useState<string | null>(null);
+    const [networkInitialized, setNetworkInitialized] = useState(false);
+
+    // Debug logging
+    console.log('🪐 [ZSTRO] ZstroHome render:', { user: !!user, authLoading, language, astroLoading, astroData: !!astroData });
 
   // Initialize ZSTRO Network
   useEffect(() => {
@@ -486,34 +538,44 @@ export default function ZstroHome() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [language, user]);
 
   useEffect(() => {
     let mounted = true;
+    
     (async () => {
-      if (!user) {
-        setAstroLoading(false);
-        setAstroData(null);
-        return;
-      }
+      console.log('🪐 [ZSTRO] useEffect triggered:', { user: !!user, language });
+      
+      console.log('🪐 [ZSTRO] Starting astro data fetch...');
       setAstroLoading(true);
+      setAstroData(null);
+      setAstroError(null);
+      
       try {
-        const res = await fetchAstroSummary(user.id);
+        const userId = user?.id || 'demo-user-123';
+        const res = await fetchAstroSummary(userId, language);
+        console.log('🪐 [ZSTRO] API response received:', res);
         if (mounted) {
           setAstroData(res);
+          console.log('🪐 [ZSTRO] Astro data set successfully');
         }
       } catch (error) {
-        console.error("Failed to fetch astro data:", error);
+        console.error("🪐 [ZSTRO] Failed to fetch astro data:", error);
+        if (mounted) {
+          setAstroData(null);
+          setAstroError(error instanceof Error ? error.message : 'Failed to load astro data');
+        }
       } finally {
         if (mounted) {
           setAstroLoading(false);
+          console.log('🪐 [ZSTRO] Loading state cleared');
         }
       }
     })();
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, language]);
 
   if (authLoading) {
     return (
@@ -531,14 +593,26 @@ export default function ZstroHome() {
       <Hero />
       <CtaGrid />
 
-      {/* Personalized block appears when signed in & birth details exist */}
-      {user && (
-        <AstroCards 
-          data={null} 
-          lang="ne"
-          showThemeToggle={true}
-        />
+      {/* Personalized astro cards */}
+      {/* Error display */}
+      {astroError && (
+        <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-sm text-red-600">
+            <strong>Failed to load astro data:</strong> {astroError}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-xs text-red-500 hover:text-red-700 underline"
+          >
+            Retry
+          </button>
+        </div>
       )}
+
+      <AstroCards
+        data={astroData}
+        loading={astroLoading}
+      />
 
       {/* Docked Chat Panel */}
       <DockedChat />

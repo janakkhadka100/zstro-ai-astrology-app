@@ -3,30 +3,25 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sun, Moon, Star, Menu, X, Globe } from 'lucide-react';
+import { Sun, Moon, Star, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import { useLang } from '@/hooks/useLang';
-import LangSwitcher from '@/components/LangSwitcher';
-
-const navigation = [
-  { name: 'Home', href: '/', icon: Star },
-  { name: 'Kundali', href: '/kundali', icon: Star },
-  { name: 'Horoscope', href: '/daily-horoscope', icon: Sun },
-  { name: 'Compatibility', href: '/compatibility', icon: Sun },
-  { name: 'Settings', href: '/settings', icon: Sun },
-];
+import { useTranslations } from '@/lib/i18n/context';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { lang, setLang } = useLang();
+  const { t } = useTranslations();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
 
-  const toggleLanguage = () => {
-    const nextLang = lang === 'en' ? 'hi' : lang === 'hi' ? 'ne' : 'en';
-    setLang(nextLang);
-  };
+  const navigation = [
+    { name: t('home'), href: '/', icon: Star },
+    { name: t('kundali'), href: '/kundali', icon: Star },
+    { name: t('horoscope'), href: '/daily-horoscope', icon: Sun },
+    { name: t('compatibility'), href: '/compatibility', icon: Sun },
+    { name: t('settings'), href: '/settings', icon: Sun },
+  ];
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -73,7 +68,7 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             {/* Language Switcher */}
             <div className="hidden sm:flex">
-              <LangSwitcher />
+              <LanguageSwitcher />
             </div>
 
             {/* Theme Toggle */}
@@ -131,15 +126,7 @@ export default function Header() {
               
               {/* Mobile controls */}
               <div className="flex items-center space-x-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleLanguage}
-                  className="flex items-center space-x-1"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>{lang === 'en' ? 'English' : lang === 'hi' ? 'हिन्दी' : 'नेपाली'}</span>
-                </Button>
+                <LanguageSwitcher variant="outline" size="sm" />
                 
                 <Button
                   variant="outline"
