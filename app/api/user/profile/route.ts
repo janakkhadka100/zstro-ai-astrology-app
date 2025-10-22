@@ -27,16 +27,13 @@ export async function GET() {
     };
 
     if (!userId) {
-      // If no user is authenticated, return 404
-      return NextResponse.json(
-        { error: "no-profile" },
-        { 
-          status: 404,
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-          }
+      // If no user is authenticated, return default profile for demo
+      return NextResponse.json(profile, { 
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
         }
-      );
+      });
     }
 
     // For authenticated users, you might fetch their actual saved profile
