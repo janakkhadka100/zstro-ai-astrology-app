@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  try { {
+  try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
     const contextStack = await getDateContextStack(session.user.id, date);
 
     // Check if we should use real-time updates
+    const { searchParams } = new URL(req.url);
     const useRealtime = searchParams.get('realtime') === 'true';
     
     if (useRealtime) {
