@@ -36,6 +36,8 @@ export interface TranslationKeys {
   dashboard: string;
   astrology: string;
   kundali: string;
+  kundaliSummary: string;
+  kundaliChart: string;
   horoscope: string;
   dailyHoroscope: string;
   aiPoweredHoroscope: string;
@@ -204,6 +206,8 @@ const translations: Record<SupportedLanguage, TranslationKeys> = {
     dashboard: "Dashboard",
     astrology: "Astrology",
     kundali: "Kundali",
+    kundaliSummary: "Kundali Summary",
+    kundaliChart: "Kundali Chart",
     horoscope: "Horoscope",
     dailyHoroscope: "Daily Horoscope",
     aiPoweredHoroscope: "AI-powered daily horoscope for all 12 zodiac signs",
@@ -370,6 +374,8 @@ const translations: Record<SupportedLanguage, TranslationKeys> = {
     dashboard: "ड्यासबोर्ड",
     astrology: "ज्योतिष",
     kundali: "कुण्डली",
+    kundaliSummary: "कुण्डली सारांश",
+    kundaliChart: "कुण्डली चार्ट",
     horoscope: "राशिफल",
     dailyHoroscope: "आजको राशिफल",
     aiPoweredHoroscope: "सबै १२ राशिका लागि AI-शक्ति प्राप्त दैनिक राशिफल",
@@ -536,6 +542,8 @@ const translations: Record<SupportedLanguage, TranslationKeys> = {
     dashboard: "डैशबोर्ड",
     astrology: "ज्योतिष",
     kundali: "कुंडली",
+    kundaliSummary: "कुंडली सारांश",
+    kundaliChart: "कुंडली चार्ट",
     horoscope: "राशिफल",
     dailyHoroscope: "आज का राशिफल",
     aiPoweredHoroscope: "सभी 12 राशियों के लिए AI-संचालित दैनिक राशिफल",

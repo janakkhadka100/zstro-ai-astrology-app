@@ -10,33 +10,38 @@ export async function GET() {
     const userId = session?.user?.id;
 
     // In a real application, you would fetch the user's birth profile from a database
-    // For now, we return a mock profile for demonstration purposes.
-    // This profile is used by AstroCards to bootstrap astrological data.
-    const mockProfile = {
-      dob: "1990-01-01", // Date of Birth
-      tob: "12:00",      // Time of Birth
-      lat: 27.7172,      // Latitude (Kathmandu)
-      lon: 85.3240,      // Longitude (Kathmandu)
-      tz: "Asia/Kathmandu", // Timezone
-      pob: "Kathmandu",  // Place of Birth
-      gender: "male",    // Gender
-      language: "ne"     // Preferred language
+    // For now, we return a structured profile for demonstration purposes.
+    const profile = {
+      name: "Demo User",
+      language: "ne" as const,
+      birth: {
+        date: "1990-01-01",
+        time: "12:00:00",
+        tz_offset: "+05:45",
+        location: {
+          lat: 27.7172,
+          lon: 85.3240,
+          place: "Kathmandu, Nepal"
+        }
+      }
     };
 
     if (!userId) {
-      // If no user is authenticated, return the mock profile
-      // or an empty object if no default profile is desired
-      return NextResponse.json(mockProfile, { 
-        status: 200,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      // If no user is authenticated, return 404
+      return NextResponse.json(
+        { error: "no-profile" },
+        { 
+          status: 404,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+          }
         }
-      });
+      );
     }
 
     // For authenticated users, you might fetch their actual saved profile
-    // For this example, we still return the mock profile
-    return NextResponse.json(mockProfile, { 
+    // For this example, we still return the structured profile
+    return NextResponse.json(profile, { 
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
