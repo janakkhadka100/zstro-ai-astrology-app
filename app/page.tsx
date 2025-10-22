@@ -518,10 +518,13 @@ const DockedChat: React.FC = () => {
         next: { revalidate: 0 },
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
+          message: text.trim(),
+          userId: 'demo-user-123',
+          chatHistory: messages.map(m => ({
             role: m.role,
             content: m.content
-          }))
+          })),
+          lang: 'ne'
         })
       });
 
@@ -529,7 +532,7 @@ const DockedChat: React.FC = () => {
         const data = await response.json();
         setMessages((m) => [
           ...m,
-          { role: "assistant", content: data.message || "Thanks for your message!" },
+          { role: "assistant", content: data.response || "Thanks for your message!" },
         ]);
       } else {
         throw new Error('Chat API failed');

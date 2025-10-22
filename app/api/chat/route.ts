@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { openai } from '@/lib/ai/openaiClient';
-import { getSystemPrompt } from '@/lib/ai/prompts';
+import { getAstrologyPrompt } from '@/lib/ai/prompts';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get system prompt for ZSTRO AI
-    const systemPrompt = getSystemPrompt(lang as 'en' | 'ne');
+    const systemPrompt = await getAstrologyPrompt(message);
 
     // Prepare messages for OpenAI
     const messages = [
@@ -60,6 +60,19 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Chat API Error:', error);
+    
+    // If OpenAI quota exceeded, provide a fallback response
+    if (error instanceof Error && error.message.includes('quota')) {
+      const fallbackResponse = NextResponse.json({
+        success: true,
+        response: `Namaste! I'm ZSTRO AI, your Vedic astrology assistant. I'm currently experiencing high demand, but I'm here to help you with your astrological questions. Please try again in a few moments, or visit our Kundali page for detailed astrological analysis.`,
+        timestamp: new Date().toISOString(),
+        model: 'fallback'
+      });
+      fallbackResponse.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      return fallbackResponse;
+    }
+    
     const response = NextResponse.json(
       { 
         error: 'Failed to process chat message',
