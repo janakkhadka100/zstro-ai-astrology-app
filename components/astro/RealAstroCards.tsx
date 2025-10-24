@@ -71,6 +71,16 @@ interface RealAstroCardsProps {
 }
 
 const RealAstroCards: React.FC<RealAstroCardsProps> = ({ data, loading, userProfile }) => {
+  // Debug logging
+  console.log('🪐 RealAstroCards render:', {
+    data: !!data,
+    loading,
+    userProfile: !!userProfile,
+    planetsCount: data?.planets?.length || 0,
+    ascendant: data?.ascendant?.name,
+    moon: data?.moon?.sign
+  });
+
   if (loading) {
     return <LoadingCards />;
   }

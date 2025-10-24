@@ -638,6 +638,12 @@ export default function ZstroHome() {
           
           if (astroResponse.ok) {
             const astro = await astroResponse.json();
+            console.log('🪐 Fetched astro data:', {
+              ascendant: astro.ascendant?.name,
+              moon: astro.moon?.sign,
+              planetsCount: astro.planets?.length,
+              planets: astro.planets?.map((p: any) => ({ planet: p.planet, sign: p.sign, house: p.house }))
+            });
             setAstroData(astro);
           } else {
             throw new Error('Failed to fetch astrological data');
