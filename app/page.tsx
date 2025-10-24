@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 import React from "react";
 import { useState, useEffect, useMemo, useRef } from "react";
+import RealAstroCards from '@/components/astro/RealAstroCards';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -602,34 +603,59 @@ const DockedChat: React.FC = () => {
 
   // ---- Page -----------------------------------------------------------------
 export default function ZstroHome() {
-  // For production, use static data to avoid hydration issues
-  const user = { id: "demo-user-123", name: "Demo User", email: "demo@example.com" };
-  const authLoading = false;
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [astroData, setAstroData] = useState<any>(null);
+  const [astroLoading, setAstroLoading] = useState(false);
+  const [astroError, setAstroError] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  // Initialize auth and fetch data
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        // Simulate auth check
+        setUser({ id: "demo-user-123", name: "राम शर्मा", email: "ram@example.com" });
+        setAuthLoading(false);
+
+        // Fetch user profile
+        const profileResponse = await fetch('/api/user/profile', { cache: 'no-store' });
+        if (profileResponse.ok) {
+          const profile = await profileResponse.json();
+          setUserProfile(profile);
+          
+          // Fetch real astrological data
+          setAstroLoading(true);
+          const astroResponse = await fetch('/api/astro/prokerala', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              birth: profile.birth, 
+              locale: profile.language 
+            }),
+            cache: 'no-store'
+          });
+          
+          if (astroResponse.ok) {
+            const astro = await astroResponse.json();
+            setAstroData(astro);
+          } else {
+            throw new Error('Failed to fetch astrological data');
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setAstroError(error instanceof Error ? error.message : 'Unknown error');
+      } finally {
+        setAstroLoading(false);
+      }
+    };
+
+    initializeData();
+  }, []);
+
   const signIn = () => window.location.href = "/login";
   const signOut = () => window.location.href = "/api/auth/signout";
-  
-  // Static astro data for production
-  const astroData = {
-    ascendant: { name: "वृष (Taurus)", num: 2 },
-    moon: { sign: "मकर (Capricorn)", house: 9 },
-    currentDasha: { 
-      system: "Vimshottari" as const, 
-      maha: "शुक्र", 
-      antara: "बुध", 
-      pratyantara: "शुक्र" 
-    },
-    transitHighlights: [
-      "चन्द्र 9औँ भाव: भाग्य/धर्ममा फोकस",
-      "शनि 10औँ: करियर स्थिरता",
-      "बुध गोचर: संचार/डिलमा अवसर",
-    ],
-    todayTips: [
-      { title: "Lucky", items: ["रङ: हल्का निलो", "संख्या: 3, 6"] },
-      { title: "Focus", items: ["कागजात क्लियर", "ईमेल उत्तर", "मुलाकात तय"] },
-    ],
-  };
-  const astroLoading = false;
-  const astroError = null;
 
   // Show loading state if needed
   if (authLoading) {
@@ -664,9 +690,10 @@ export default function ZstroHome() {
     </div>
       )}
 
-      <AstroCards
+      <RealAstroCards
         data={astroData}
-        loading={false}
+        loading={astroLoading}
+        userProfile={userProfile}
       />
 
       {/* Docked Chat Panel */}

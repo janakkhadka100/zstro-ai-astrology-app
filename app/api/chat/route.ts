@@ -5,6 +5,57 @@ import { NextRequest, NextResponse } from 'next/server';
 import { openai } from '@/lib/ai/openaiClient';
 import { getAstrologyPrompt } from '@/lib/ai/prompts';
 
+// Get user's astrological context for personalized chat responses
+async function getUserAstroContext(userId: string, lang: string): Promise<string> {
+  try {
+    // Fetch user profile
+    const profileResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/user/profile`, {
+      cache: 'no-store'
+    });
+    
+    if (!profileResponse.ok) {
+      return "ज्योतिषीय विवरण उपलब्ध छैन।";
+    }
+    
+    const profile = await profileResponse.json();
+    
+    // Fetch astrological data
+    const astroResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/astro/prokerala`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        birth: profile.birth, 
+        locale: lang 
+      }),
+      cache: 'no-store'
+    });
+    
+    if (!astroResponse.ok) {
+      return "ज्योतिषीय डाटा उपलब्ध छैन।";
+    }
+    
+    const astroData = await astroResponse.json();
+    
+    // Create personalized context
+    return `
+व्यक्तिगत ज्योतिषीय विवरण:
+- नाम: ${profile.name}
+- जन्म मिति: ${profile.birth.date}
+- जन्म समय: ${profile.birth.time}
+- जन्म स्थान: ${profile.birth.location.place}
+- लग्न: ${astroData.ascendant?.name || 'अज्ञात'}
+- चन्द्र राशि: ${astroData.moon?.sign || 'अज्ञात'} (${astroData.moon?.house || '?'}औं भाव)
+- वर्तमान दशा: ${astroData.currentDasha?.maha || 'अज्ञात'} (${astroData.currentDasha?.antara || ''} ${astroData.currentDasha?.pratyantara || ''})
+- ग्रहहरूको स्थिति: ${astroData.planets?.map((p: any) => `${p.planet}: ${p.sign} (${p.house}औं भाव)`).join(', ') || 'अज्ञात'}
+- गोचरका मुख्य बुँदा: ${astroData.transitHighlights?.join(', ') || 'अज्ञात'}
+    `.trim();
+    
+  } catch (error) {
+    console.error('Error fetching astro context:', error);
+    return "ज्योतिषीय विवरण लोड गर्न सकिएन।";
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -19,8 +70,22 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // Get system prompt for ZSTRO AI
-    const systemPrompt = await getAstrologyPrompt(message);
+    // Get user's astrological context for personalized responses
+    const astroContext = await getUserAstroContext(userId, lang);
+    
+    // Create personalized system prompt
+    const systemPrompt = `तपाईं ZSTRO AI हुनुहुन्छ, एक वैदिक ज्योतिष विशेषज्ञ। तपाईंले निम्न ज्योतिषीय विवरणहरू प्रयोग गरेर व्यक्तिगत उत्तर दिनुहोस्:
+
+${astroContext}
+
+तपाईंको उत्तरहरू:
+- नेपाली भाषामा दिनुहोस्
+- वैदिक ज्योतिषका सिद्धान्तहरूमा आधारित हुनुहोस्
+- व्यक्तिगत र सहायक हुनुहोस्
+- सरल र स्पष्ट भाषामा लेख्नुहोस्
+- यदि आवश्यक भए, उपायहरू सुझाउनुहोस्
+
+प्रश्न: ${message}`;
 
     // Prepare messages for OpenAI
     const messages = [

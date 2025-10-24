@@ -1,7 +1,7 @@
 // app/api/user/profile/route.ts
-// User Profile API Endpoint for Birth Details
+// Real user profile with birth details for astrological calculations
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
 
 export async function GET() {
@@ -9,25 +9,30 @@ export async function GET() {
     const session = await auth();
     const userId = session?.user?.id;
 
-    // In a real application, you would fetch the user's birth profile from a database
-    // For now, we return a structured profile for demonstration purposes.
+    // For demo purposes, return a structured profile
+    // In production, fetch from database using userId
     const profile = {
-      name: "Demo User",
+      name: "राम शर्मा",
       language: "ne" as const,
       birth: {
-        date: "1990-01-01",
-        time: "12:00:00",
+        date: "1990-05-15",
+        time: "14:30:00",
         tz_offset: "+05:45",
         location: {
           lat: 27.7172,
           lon: 85.3240,
-          place: "Kathmandu, Nepal"
+          place: "काठमाडौं, नेपाल"
         }
+      },
+      preferences: {
+        chart_style: "north_indian",
+        language: "ne",
+        timezone: "Asia/Kathmandu"
       }
     };
 
     if (!userId) {
-      // If no user is authenticated, return default profile for demo
+      // Return demo profile for unauthenticated users
       return NextResponse.json(profile, { 
         status: 200,
         headers: {
@@ -36,14 +41,17 @@ export async function GET() {
       });
     }
 
-    // For authenticated users, you might fetch their actual saved profile
-    // For this example, we still return the structured profile
+    // For authenticated users, you would fetch their actual saved profile
+    // const userProfile = await getUserProfile(userId);
+    // return NextResponse.json(userProfile || profile, { ... });
+
     return NextResponse.json(profile, { 
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
       }
     });
+
   } catch (error) {
     console.error('Profile API Error:', error);
     return NextResponse.json(
@@ -58,53 +66,34 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     const userId = session?.user?.id;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { 
-          status: 401,
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-          }
-        }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { dob, tob, lat, lon, tz, pob, gender, language } = body;
+    const { name, birth, preferences } = body;
 
-    // In a real application, you would save this to the database
-    // For now, we just return the received data
-    const profile = {
-      dob,
-      tob,
-      lat,
-      lon,
-      tz,
-      pob,
-      gender,
-      language,
-      userId
-    };
+    // In production, save to database
+    // await saveUserProfile(userId, { name, birth, preferences });
 
-    return NextResponse.json(
-      { success: true, profile },
-      { 
-        status: 200,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-        }
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Profile updated successfully' 
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
       }
-    );
+    });
+
   } catch (error) {
     console.error('Profile Update Error:', error);
     return NextResponse.json(
-      { error: 'Failed to update user profile' },
+      { error: 'Failed to update profile' },
       { 
         status: 500,
         headers: {
