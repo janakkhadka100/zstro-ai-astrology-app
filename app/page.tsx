@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 import React from "react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import RealAstroCards from '@/components/astro/RealAstroCards';
+import SimplePlanetCards from '@/components/astro/SimplePlanetCards';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -701,6 +702,18 @@ export default function ZstroHome() {
         loading={astroLoading}
         userProfile={userProfile}
       />
+
+      {/* Simple Planet Cards for Testing */}
+      {astroData && astroData.planets && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4 text-center">ग्रहहरूको स्थिति (Testing)</h3>
+          <SimplePlanetCards
+            planets={astroData.planets}
+            ascendant={astroData.ascendant?.name || 'Unknown'}
+            moon={astroData.moon?.sign || 'Unknown'}
+          />
+        </div>
+      )}
 
       {/* Docked Chat Panel */}
       <DockedChat />
